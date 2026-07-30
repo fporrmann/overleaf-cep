@@ -7,7 +7,7 @@ import {
 import OLButton from '@/shared/components/ol/ol-button'
 import { ProjectSyncState } from '../../types/git-sync-types'
 
-type GitSyncNeedPermissionModalProps = {
+type GitSyncCannotExportModalProps = {
   projectSyncState: ProjectSyncState
   handleHide: () => void
 }
@@ -21,7 +21,7 @@ const GitSyncCannotExportModal = ({ projectSyncState, handleHide }: GitSyncCanno
           type="warning"
           content={(
             <Trans
-              i18nKey="ask_proj_owner_to_export_to_github"
+              i18nKey="ask_proj_owner_to_export_to_gitea"
               values={{
                 projectOwnerEmail: projectSyncState.ownerEmail ?? '?',
               }}

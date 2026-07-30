@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProjectContext } from '@/shared/context/project-context'
-import GithubLogo from '@/shared/svgs/github-logo'
+import GiteaLogo from '@/shared/svgs/gitea-logo'
 import IntegrationCard from '@/features/integrations-panel/integration-card'
 import GitSyncModal from './modals/git-sync-modal'
 import { GitSyncModalStatus } from '../types/git-sync-types'
 
-const GitHubSyncCard = () => {
+const GiteaSyncCard = () => {
   const { t } = useTranslation()
 
   const [showModal, setShowModal] = useState(false)
@@ -16,9 +16,9 @@ const GitHubSyncCard = () => {
   return (
     <>
       <IntegrationCard
-        title={t('github')}
-        description={t('sync_with_a_github_repository')}
-        icon={<GithubLogo size={32} />}
+        title={t('gitea')}
+        description={t('sync_with_a_gitea_repository')}
+        icon={<GiteaLogo size={32} />}
         showPaywallBadge={false}
         onClick={() => setShowModal(true)}
       >
@@ -38,4 +38,4 @@ const GitHubSyncCard = () => {
   )
 }
 
-export default GitHubSyncCard
+export default GiteaSyncCard

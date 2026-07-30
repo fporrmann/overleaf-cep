@@ -6,6 +6,7 @@ import OLButton from '@/shared/components/ol/ol-button'
 import OLNotification from '@/shared/components/ol/ol-notification'
 import { debugConsole } from '@/utils/debugging'
 import { ProjectSyncState, GitSyncModalStatus } from '../../types/git-sync-types'
+import getMeta from '@/utils/meta'
 
 type GitSyncUnlinkModalProps = {
   handleHide: () => void
@@ -28,8 +29,10 @@ const GitSyncUnlinkModal = ({
     runAsync,
   } = useAsync<void>()
 
+  let giteaUrl = getMeta('ol-ExposedSettings').giteaUrl || ''
+
   const handleUnlink = () => {
-    runAsync(deleteJSON(`/project/${projectId}/github-sync`))
+    runAsync(deleteJSON(`/project/${projectId}/gitea-sync`))
       .then(() => setModalStatus('need-export'))
       .catch(err => debugConsole.error(err?.data?.message || err?.message || err))
   }
@@ -40,7 +43,7 @@ const GitSyncUnlinkModal = ({
         <p>
           {t('project_linked_to')}:&nbsp;
           <a
-            href={`https://github.com/${projectSyncState.repoFullName}`}
+            href={`${giteaUrl}/${projectSyncState.repoFullName}`}
             target="_blank"
             rel="noreferrer noopener"
           >
@@ -53,7 +56,7 @@ const GitSyncUnlinkModal = ({
         {!error ? (
           <OLNotification
             type="warning"
-            content={t('unlink_the_project_from_the_current_github_repo')}
+            content={t('unlink_the_project_from_the_current_gitea_repo')}
           />
         ) : (
           <OLNotification
@@ -61,7 +64,7 @@ const GitSyncUnlinkModal = ({
             content={
               error.info?.statusCode === 403 ? (
                 <Trans
-                  i18nKey="ask_proj_owner_to_unlink_from_current_github"
+                  i18nKey="ask_proj_owner_to_unlink_from_current_gitea"
                   values={{ projectOwnerEmail: error?.data?.ownerEmail ?? '?' }}
                   components={[
                     error?.data?.ownerEmail ? <a href={`mailto:${error.data.ownerEmail}`} /> : <></>

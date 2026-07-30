@@ -12,7 +12,7 @@ const GitSyncNeedAuthModal = ({ handleHide }: { handleHide: () => void }) => {
   return (
     <>
       <OLModalBody>
-        <p>{t('link_to_github_description', { appName })}</p>
+        <p>{t('link_to_gitea_description', { appName })}</p>
       </OLModalBody>
       <OLModalFooter>
         <OLButton
@@ -27,13 +27,13 @@ const GitSyncNeedAuthModal = ({ handleHide }: { handleHide: () => void }) => {
           onClick={() => {
             handleHide()
             window.open(
-              '/user/github-sync/oauth2',
-              'githubAuth',
+              '/user/gitea-sync/oauth2',
+              'giteaAuth',
               'width=600,height=700'
             )
           }}
         >
-          {t('link_to_github')}
+          {t('link_to_gitea')}
         </OLButton>
       </OLModalFooter>
     </>

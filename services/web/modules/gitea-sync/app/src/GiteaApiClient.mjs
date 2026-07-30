@@ -21,22 +21,22 @@ import {
   AlreadyExistsError,
 } from './GitSyncErrors.mjs'
 
-const GITHUB_URL = 'https://github.com'
-const GITHUB_API_BASE = 'https://api.github.com'
-const GITHUB_GRAPHQL = 'https://api.github.com/graphql'
-const MAX_PER_PAGE = 100  // GitHub REST API limit
+const GITEA_URL = Settings.giteaSync?.url
+const GITEA_API_BASE = `${GITEA_URL}/api/v1`
+const GITEA_GRAPHQL = `${GITEA_API_BASE}/graphql`
+const MAX_PER_PAGE = 100  // Gitea REST API limit
 
 const REQUEST_TIMEOUT_MS = 60 * 1000
 const REQUEST_LONG_TIMEOUT_MS = 600 * 1000
 
-const maxConcurrency = process.env.GITHUB_API_MAX_CONCURRENCY || 5
+const maxConcurrency = process.env.GITEA_API_MAX_CONCURRENCY || 5
 
 function buildHeaders(token) {
   return {
-    Accept: 'application/vnd.github+json',
+    Accept: 'application/vnd.gitea+json',
     'Content-Type': 'application/json',
-    'X-GitHub-Api-Version': '2022-11-28',
-    'User-Agent': 'Overleaf-CEP-GitHub-Sync',
+    'X-Gitea-Api-Version': '2022-11-28',
+    'User-Agent': 'Overleaf-CEP-Gitea-Sync',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   }
 }
@@ -78,15 +78,15 @@ function isRepositoryAlreadyExistsError(err) {
   )
 }
 
-function normalizeGitHubError(err, operation) {
-  logger.error({ operation }, 'GitHub API request failed')
+function normalizeGiteaError(err, operation) {
+  logger.error({ operation }, 'Gitea API request failed')
 
   if (err.name === 'AbortError') {
-    throw new ProviderRequestError('GitHub request timed out', { status: 504 }, err)
+    throw new ProviderRequestError('Gitea request timed out', { status: 504 }, err)
   }
 
   if (!(err instanceof RequestFailedError)) {
-    throw new ProviderRequestError('Something wrong with GitHub request', { status: 500 }, err)
+    throw new ProviderRequestError('Something wrong with Gitea request', { status: 500 }, err)
   }
 
   const status = err.response?.status || 500
@@ -114,37 +114,37 @@ function normalizeGitHubError(err, operation) {
     }
   }
 
-  throw new ProviderRequestError('GitHub request failed', { status }, err)
+  throw new ProviderRequestError('Gitea request failed', { status }, err)
 }
 
 // wrappers
-function fetchGitHubJson(url, options, operation) {
+function fetchGiteaJson(url, options, operation) {
   return fetchJson(url, options).catch(err => {
-    normalizeGitHubError(err, operation)
+    normalizeGiteaError(err, operation)
   })
 }
 
-function fetchGitHubJsonWithResponse(url, options, operation) {
+function fetchGiteaJsonWithResponse(url, options, operation) {
   return fetchJsonWithResponse(url, options).catch(err => {
-    normalizeGitHubError(err, operation)
+    normalizeGiteaError(err, operation)
   })
 }
 
-function fetchGitHubStreamWithResponse(url, options, operation) {
+function fetchGiteaStreamWithResponse(url, options, operation) {
   return fetchStreamWithResponse(url, options).catch(err => {
-    normalizeGitHubError(err, operation)
+    normalizeGiteaError(err, operation)
   })
 }
 
-function fetchGitHubNothing(url, options, operation) {
+function fetchGiteaNothing(url, options, operation) {
   return fetchNothing(url, options).catch(err => {
-    normalizeGitHubError(err, operation)
+    normalizeGiteaError(err, operation)
   })
 }
 
-function fetchGitHubStream(url, options, operation) {
+function fetchGiteaStream(url, options, operation) {
   return fetchStream(url, options).catch(err => {
-    normalizeGitHubError(err, operation)
+    normalizeGiteaError(err, operation)
   })
 }
 
@@ -152,30 +152,30 @@ function fetchGitHubStream(url, options, operation) {
 
 // OAuth
 function getOAuth2Url() {
-  const oAuthUrl = new URL(`${GITHUB_URL}/login/oauth/authorize`)
-  oAuthUrl.searchParams.append('client_id', Settings.githubSync.clientID)
-  oAuthUrl.searchParams.append('redirect_uri', Settings.githubSync.callbackURL)
+  const oAuthUrl = new URL(`${GITEA_URL}/login/oauth/authorize`)
+  oAuthUrl.searchParams.append('client_id', Settings.giteaSync.clientID)
+  oAuthUrl.searchParams.append('redirect_uri', Settings.giteaSync.callbackURL)
   oAuthUrl.searchParams.append('scope', 'read:org,repo,workflow')
   return oAuthUrl
 }
 
 function exchangeCodeForToken(code) {
-  return fetchGitHubJson(`${GITHUB_URL}/login/oauth/access_token`, {
+  return fetchGiteaJson(`${GITEA_URL}/login/oauth/access_token`, {
     method: 'POST',
     headers: buildHeaders(),
     json: {
       code,
-      client_id: Settings.githubSync.clientID,
-      client_secret: Settings.githubSync.clientSecret,
-      redirect_uri: Settings.githubSync.callbackURL,
+      client_id: Settings.giteaSync.clientID,
+      client_secret: Settings.giteaSync.clientSecret,
+      redirect_uri: Settings.giteaSync.callbackURL,
     },
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
   }, 'exchangeCodeForToken').then(r => r.access_token)
 }
 
 function revokeToken(token) {
-  const { clientID, clientSecret } = Settings.githubSync
-  return fetchGitHubNothing(`${GITHUB_API_BASE}/applications/${clientID}/token`, {
+  const { clientID, clientSecret } = Settings.giteaSync
+  return fetchGiteaNothing(`${GITEA_API_BASE}/applications/${clientID}/token`, {
     method: 'DELETE',
     headers: buildHeaders(),
     basicAuth: {
@@ -189,7 +189,7 @@ function revokeToken(token) {
 
 // user, orgs, permissions
 function getUser(token) {
-  return fetchGitHubJson(`${GITHUB_API_BASE}/user`, {
+  return fetchGiteaJson(`${GITEA_API_BASE}/user`, {
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   }, 'getUser').then(({ id, login, name }) => ({ id, login, name }))
@@ -197,7 +197,7 @@ function getUser(token) {
 
 /*
 async function getUserAndOrgsREST(token) {
-  const user = await fetchGitHubJson(`${GITHUB_API_BASE}/user`, {
+  const user = await fetchGiteaJson(`${GITEA_API_BASE}/user`, {
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
   }, 'getUserAndOrgs:user')
@@ -207,7 +207,7 @@ async function getUserAndOrgsREST(token) {
     page: page.toString(),
     per_page: MAX_PER_PAGE.toString(),
   })
-  const orgs = await fetchGitHubJson(`${GITHUB_API_BASE}/user/orgs?${params}`, {
+  const orgs = await fetchGiteaJson(`${GITEA_API_BASE}/user/orgs?${params}`, {
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
   }, 'getUserAndOrgs:orgs')
@@ -233,7 +233,7 @@ async function getUserAndOrgs(token) {
       }
     }
   `
-  const json = await fetchGitHubJson(GITHUB_GRAPHQL, {
+  const json = await fetchGiteaJson(GITEA_GRAPHQL, {
     method: 'POST',
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
@@ -249,7 +249,7 @@ async function getUserAndOrgs(token) {
 }
 
 function getPushPermission(token, repoFullName) {
-  return fetchGitHubJson(`${GITHUB_API_BASE}/repos/${repoFullName}`, {
+  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}`, {
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   }, 'getPushPrmission').then(repo => (repo.permissions?.push === true))
@@ -257,8 +257,8 @@ function getPushPermission(token, repoFullName) {
 
 // repos
 function createRepo(token, { name, description, isPublic, org }) {
-  const url = org ? `${GITHUB_API_BASE}/orgs/${org}/repos` : `${GITHUB_API_BASE}/user/repos`
-  return fetchGitHubJson(url, {
+  const url = org ? `${GITEA_API_BASE}/orgs/${org}/repos` : `${GITEA_API_BASE}/user/repos`
+  return fetchGiteaJson(url, {
     method: 'POST',
     headers: buildHeaders(token),
     json: {
@@ -277,7 +277,7 @@ async function _listUserReposPage(token, page) {
     per_page: MAX_PER_PAGE.toString(),
   })
 
-  const { json, response } = await fetchGitHubJsonWithResponse(`${GITHUB_API_BASE}/user/repos?${params}`, {
+  const { json, response } = await fetchGiteaJsonWithResponse(`${GITEA_API_BASE}/user/repos?${params}`, {
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   }, '_listUserReposPage')
@@ -311,7 +311,7 @@ async function listUserRepos(token) {
 
 // Git (blobs / trees / commits)
 function uploadBlob(token, repoFullName, buffer) {
-  return fetchGitHubJson(`${GITHUB_API_BASE}/repos/${repoFullName}/git/blobs`, {
+  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/blobs`, {
     method: 'POST',
     headers: buildHeaders(token),
     json: {
@@ -325,17 +325,17 @@ function uploadBlob(token, repoFullName, buffer) {
 function getBlobStream(token, repoFullName, ref, path) {
   const encodedPath = encodeURIComponent(path).replace(/%2F/g, '/')
 
-  return fetchGitHubStream(`${GITHUB_API_BASE}/repos/${repoFullName}/contents/${encodedPath}?ref=${ref}`, {
+  return fetchGiteaStream(`${GITEA_API_BASE}/repos/${repoFullName}/contents/${encodedPath}?ref=${ref}`, {
     headers: {
       ...buildHeaders(token),
-      Accept: 'application/vnd.github.raw',
+      Accept: 'application/vnd.gitea.raw',
     },
     signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS),
   }, 'getBlobStream')
 }
 
 function createTree(token, repoFullName, entries, base_tree) {
-  return fetchGitHubJson(`${GITHUB_API_BASE}/repos/${repoFullName}/git/trees`, {
+  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/trees`, {
     method: 'POST',
     headers: buildHeaders(token),
     json: {
@@ -352,7 +352,7 @@ function createTree(token, repoFullName, entries, base_tree) {
 }
 
 function createCommit(token, repoFullName, { tree, message, parents = [] }) {
-  return fetchGitHubJson(`${GITHUB_API_BASE}/repos/${repoFullName}/git/commits`, {
+  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/commits`, {
     method: 'POST',
     headers: buildHeaders(token),
     json: {
@@ -365,7 +365,7 @@ function createCommit(token, repoFullName, { tree, message, parents = [] }) {
 }
 
 function getCommitTree(token, repoFullName, commit) {
-  return fetchGitHubJson(`${GITHUB_API_BASE}/repos/${repoFullName}/git/commits/${commit}`, {
+  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/commits/${commit}`, {
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
   }, 'getCommitTree').then(r => r.tree.sha)
@@ -373,7 +373,7 @@ function getCommitTree(token, repoFullName, commit) {
 
 function listBlobsAtCommit(token, repoFullName, commit) {
 // can use commit sha here instead of tree sha
-  return fetchGitHubJson(`${GITHUB_API_BASE}/repos/${repoFullName}/git/trees/${commit}?recursive=1`, {
+  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/trees/${commit}?recursive=1`, {
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
   }, 'listBlobsAtCommit').then(r =>
@@ -387,8 +387,8 @@ function listBlobsAtCommit(token, repoFullName, commit) {
 }
 
 async function listNewCommitsWithStatus(token, fullName, branchName, fromCommit) {
-  const url = `${GITHUB_API_BASE}/repos/${fullName}/compare/${fromCommit}...${encodeURIComponent(branchName)}`
-  const data = await fetchGitHubJson(url, {
+  const url = `${GITEA_API_BASE}/repos/${fullName}/compare/${fromCommit}...${encodeURIComponent(branchName)}`
+  const data = await fetchGiteaJson(url, {
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
   }, 'listNewCommitsWithStatus')
@@ -408,14 +408,14 @@ async function listNewCommitsWithStatus(token, fullName, branchName, fromCommit)
 
 // branches
 function getBranchHead(token, repoFullName, branchName) {
-  return fetchGitHubJson(`${GITHUB_API_BASE}/repos/${repoFullName}/git/ref/heads/${encodeURIComponent(branchName)}`, {
+  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/ref/heads/${encodeURIComponent(branchName)}`, {
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
   }, 'getBranchHead').then(r => r.object.sha)
 }
 
 function createBranch(token, repoFullName, branchName, sha) {
-  return fetchGitHubJson(`${GITHUB_API_BASE}/repos/${repoFullName}/git/refs`, {
+  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/refs`, {
     method: 'POST',
     headers: buildHeaders(token),
     json: {
@@ -427,7 +427,7 @@ function createBranch(token, repoFullName, branchName, sha) {
 }
 
 function updateBranch(token, repoFullName, branchName, sha, force = false) {
-  return fetchGitHubJson(`${GITHUB_API_BASE}/repos/${repoFullName}/git/refs/heads/${encodeURIComponent(branchName)}`, {
+  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/refs/heads/${encodeURIComponent(branchName)}`, {
     method: 'PATCH',
     headers: buildHeaders(token),
     json: { sha, force },
@@ -436,7 +436,7 @@ function updateBranch(token, repoFullName, branchName, sha, force = false) {
 }
 
 function deleteBranch(token, repoFullName, branchName) {
-  return fetchGitHubNothing(`${GITHUB_API_BASE}/repos/${repoFullName}/git/refs/heads/${encodeURIComponent(branchName)}`, {
+  return fetchGiteaNothing(`${GITEA_API_BASE}/repos/${repoFullName}/git/refs/heads/${encodeURIComponent(branchName)}`, {
     method: 'DELETE',
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
@@ -445,7 +445,7 @@ function deleteBranch(token, repoFullName, branchName) {
 
 // merge / compare
 function mergeBranch(token, repoFullName, base, head) {
-  return fetchGitHubJson(`${GITHUB_API_BASE}/repos/${repoFullName}/merges`, {
+  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/merges`, {
     method: 'POST',
     headers: buildHeaders(token),
     json: { base, head },
@@ -454,7 +454,7 @@ function mergeBranch(token, repoFullName, base, head) {
 }
 
 function compareCommits(token, repoFullName, from, to) {
-  return fetchGitHubJson(`${GITHUB_API_BASE}/repos/${repoFullName}/compare/${from}...${to}`, {
+  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/compare/${from}...${to}`, {
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
   }, 'compareCommits').then(r => { r.files || [] })
@@ -462,7 +462,7 @@ function compareCommits(token, repoFullName, from, to) {
 
 // zip
 function getRepoZipball(token, repoFullName, sha) {
-  return fetchGitHubStream(`${GITHUB_API_BASE}/repos/${repoFullName}/zipball/${sha}`, {
+  return fetchGiteaStream(`${GITEA_API_BASE}/repos/${repoFullName}/zipball/${sha}`, {
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS),
   }, 'getRepoZipball')

@@ -68,7 +68,7 @@ const {
       setError(null)
       setErrorMessage('')
 
-      runAsync(getJSON(`/project/${projectId}/github-sync/state`))
+      runAsync(getJSON(`/project/${projectId}/gitea-sync/state`))
         .then(pss => {
           switch (pss.mergeStatus) {
             // pss.ownerEmail is set to the email address of the project owner
@@ -109,7 +109,7 @@ const {
       setErrorConn(null)
       setErrorMessage('')
 
-      runAsyncConn(getJSON(`/user/github-sync/status`))
+      runAsyncConn(getJSON(`/user/gitea-sync/status`))
         .then(isConnected => {
           if (!isConnected) {
             setModalStatus('need-auth')
@@ -130,7 +130,7 @@ const {
   return (
     <OLModal show={show} onHide={handleHide} backdrop="static">
       <OLModalHeader closeButton>
-        <OLModalTitle>{t('sync_with_github')}</OLModalTitle>
+        <OLModalTitle>{t('sync_with_gitea')}</OLModalTitle>
       </OLModalHeader>
 
       {modalStatus === 'loading' && (

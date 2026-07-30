@@ -3,7 +3,7 @@ import mongoose from "../../../../app/src/infrastructure/Mongoose.mjs"
 const { Schema } = mongoose
 const { ObjectId } = Schema
 
-export const GitHubSyncProjectStatesSchema = new Schema(
+export const GiteaSyncProjectStatesSchema = new Schema(
   {
     projectId: { type: ObjectId, ref: 'Project', required: true, unique: true },
     repoFullName: { type: String, required: true },
@@ -15,10 +15,10 @@ export const GitHubSyncProjectStatesSchema = new Schema(
     unmergedBranchHead: { type: String, default: null },
     conflictVersion: { type: Number, default: null },
   },
-  { collection: 'githubSyncProjectStates', minimize: false }
+  { collection: 'giteaSyncProjectStates', minimize: false }
 )
 
-export const GitHubSyncProjectStates = mongoose.model(
-  'GitHubSyncProjectStates',
-  GitHubSyncProjectStatesSchema,
+export const GiteaSyncProjectStates = mongoose.model(
+  'GiteaSyncProjectStates',
+  GiteaSyncProjectStatesSchema,
 )

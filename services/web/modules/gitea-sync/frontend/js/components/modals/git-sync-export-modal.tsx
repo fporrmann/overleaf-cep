@@ -55,7 +55,7 @@ const GitSyncExportModal = ({
   } = useAsync<OrgsResponse>()
 
   useEffect(() => {
-    runAsyncUserAndOrgs(getJSON('/user/github-sync/orgs'))
+    runAsyncUserAndOrgs(getJSON('/user/gitea-sync/orgs'))
       .then(userAndOrgs => setSelectedOwner(userAndOrgs?.user))
       .catch(err => debugConsole.error(err?.data?.message || err?.message || err))
   }, [])
@@ -66,7 +66,7 @@ const GitSyncExportModal = ({
     const isPublic = visibility === 'public'
     const org = selectedOwner === userAndOrgs?.user ? undefined : selectedOwner
 
-    runAsync(postJSON(`/project/${projectId}/github-sync/export`, {
+    runAsync(postJSON(`/project/${projectId}/gitea-sync/export`, {
       body: {
         name: repoName,
         description,
@@ -85,8 +85,8 @@ const GitSyncExportModal = ({
   return (
     <>
       <OLModalBody>
-        <h4>{t('export_project_to_github')}</h4>
-        <p>{t('project_not_linked_to_github')}</p>
+        <h4>{t('export_project_to_gitea')}</h4>
+        <p>{t('project_not_linked_to_gitea')}</p>
 
         {error && (
           <OLNotification
@@ -106,13 +106,13 @@ const GitSyncExportModal = ({
           <OLRow>
             <OLCol xs={4}>
               <OLFormGroup>
-                <OLFormLabel htmlFor="github-sync-owner">
+                <OLFormLabel htmlFor="gitea-sync-owner">
                   {selectedOwner === userAndOrgs?.user
                     ? t('owner')
                     : t('organization')}
                 </OLFormLabel>
                 <OLFormSelect
-                  id="github-sync-owner"
+                  id="gitea-sync-owner"
                   name="org"
                   value={selectedOwner}
                   onChange={e => setSelectedOwner(e.target.value)}
@@ -131,11 +131,11 @@ const GitSyncExportModal = ({
 
             <OLCol xs={5}>
               <OLFormGroup>
-                <OLFormLabel htmlFor="github-sync-name">
+                <OLFormLabel htmlFor="gitea-sync-name">
                   {t('repository_name')}
                 </OLFormLabel>
                 <OLFormControl
-                  id="github-sync-name"
+                  id="gitea-sync-name"
                   name="name"
                   type="text"
                   value={repoName}
@@ -148,11 +148,11 @@ const GitSyncExportModal = ({
           <OLRow>
             <OLCol xs={12}>
               <OLFormGroup>
-                <OLFormLabel htmlFor="github-sync-description">
+                <OLFormLabel htmlFor="gitea-sync-description">
                   {t('description')} ({t('optional')})
                 </OLFormLabel>
                 <OLFormControl
-                  id="github-sync-description"
+                  id="gitea-sync-description"
                   name="description"
                   type="text"
                   value={description}
@@ -180,7 +180,7 @@ const GitSyncExportModal = ({
                     checked={visibility === 'public'}
                     onChange={() => setVisibility('public')}
                     label={t('public', { defaultValue: 'Public' })}
-                    description={t('github_public_description')}
+                    description={t('gitea_public_description')}
                   />
                 </OLCol>
               </OLRow>
@@ -196,7 +196,7 @@ const GitSyncExportModal = ({
                     checked={visibility === 'private'}
                     onChange={() => setVisibility('private')}
                     label={t('private', { defaultValue: 'Private' })}
-                    description={t('github_private_description')}
+                    description={t('gitea_private_description')}
                   />
                 </OLCol>
               </OLRow>
@@ -219,7 +219,7 @@ const GitSyncExportModal = ({
           disabled={!repoName.trim() || isLoading}
           isLoading={isLoading}
         >
-          {t('create_project_in_github')}
+          {t('create_project_in_gitea')}
         </OLButton>
       </OLModalFooter>
     </>

@@ -20,7 +20,7 @@ const GitSyncLoadingModal = ({ handleHide, setModalStatus, errorMessage }: GitSy
       <OLModalBody>
         <div role="status" className="loading align-items-start">
           <div aria-hidden="true" data-testid="ol-spinner" className="spinner-border spinner-border-sm"></div>
-          {t('checking_project_github_status')}
+          {t('checking_project_gitea_status')}
         </div>
       </OLModalBody>
 

@@ -13,6 +13,7 @@ import OLIconButton from '@/shared/components/ol/ol-icon-button'
 import OLNotification from '@/shared/components/ol/ol-notification'
 import { debugConsole } from '@/utils/debugging'
 import { ProjectSyncState, GitSyncModalStatus } from '../../types/git-sync-types'
+import getMeta from '@/utils/meta'
 
 type GitSyncMergeOverviewModalProps = {
   handleHide: () => void
@@ -63,7 +64,7 @@ const GitSyncMergeOverviewModal = ({
   const loadUnmergedCommits = () => {
     setData({})
 
-    runAsync(getJSON(`/project/${projectId}/github-sync/merge/overview`))
+    runAsync(getJSON(`/project/${projectId}/gitea-sync/merge/overview`))
       .then(data => { if (!data) setModalStatus('loading') })
       .catch(err => {
         debugConsole.error(err?.data?.message || err?.message || err)
@@ -73,6 +74,8 @@ const GitSyncMergeOverviewModal = ({
         ) setModalStatus('loading')
       })
   }
+
+  let giteaUrl = getMeta('ol-ExposedSettings').giteaUrl || ''
 
   useEffect(() => {
     loadUnmergedCommits()
@@ -84,7 +87,7 @@ const GitSyncMergeOverviewModal = ({
         <p>
           {t('project_linked_to')}:&nbsp;
           <a
-            href={`https://github.com/${projectSyncState.repoFullName}`}
+            href={`${giteaUrl}/${projectSyncState.repoFullName}`}
             target="_blank"
             rel="noreferrer noopener"
           >
@@ -112,12 +115,12 @@ const GitSyncMergeOverviewModal = ({
             {data.diverged && (
               <OLNotification
                 type="warning"
-                content={t('github_repository_diverged')}
+                content={t('gitea_repository_diverged')}
               />
             )}
 
-            <h3 className="github-sync-commits-heading">
-              {t('recent_commits_in_github')}
+            <h3 className="gitea-sync-commits-heading">
+              {t('recent_commits_in_gitea')}
 
               <OLIconButton
                 icon="refresh"
@@ -130,7 +133,7 @@ const GitSyncMergeOverviewModal = ({
 
             {data.commits?.length === 0 && (
               <div>
-                <p className="small">{t('no_new_commits_in_github')}</p>
+                <p className="small">{t('no_new_commits_in_gitea')}</p>
               </div>
             )}
 
@@ -140,7 +143,7 @@ const GitSyncMergeOverviewModal = ({
                   <div key={commit.sha}>
                     <span className="small float-end">
                       <a
-                        href={`https://github.com/${projectSyncState.repoFullName}/commit/${commit.sha}`}
+                        href={`${giteaUrl}/${projectSyncState.repoFullName}/commit/${commit.sha}`}
                         target="_blank"
                         rel="noreferrer noopener"
                       >
@@ -149,7 +152,7 @@ const GitSyncMergeOverviewModal = ({
                     </span>
 
                     <a
-                      href={`https://github.com/${projectSyncState.repoFullName}/commit/${commit.sha}`}
+                      href={`${giteaUrl}/${projectSyncState.repoFullName}/commit/${commit.sha}`}
                       target="_blank"
                       className="commit-message"
                       rel="noreferrer noopener"
@@ -169,7 +172,7 @@ const GitSyncMergeOverviewModal = ({
               <>
                 <hr />
                 <OLForm>
-                  <p>{t('sync_project_to_github_explanation', { appName })}</p>
+                  <p>{t('sync_project_to_gitea_explanation', { appName })}</p>
                   <OLRow>
                     <OLCol xs={12}>
                       <OLFormGroup>
@@ -177,7 +180,7 @@ const GitSyncMergeOverviewModal = ({
                           as="textarea"
                           rows={1}
                           value={commitMessage}
-                          placeholder={t('github_commit_message_placeholder', { appName })}
+                          placeholder={t('gitea_commit_message_placeholder', { appName })}
                           onChange={(e) => setCommitMessage(e.target.value)}
                         />
                       </OLFormGroup>

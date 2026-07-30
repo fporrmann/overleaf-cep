@@ -1,7 +1,7 @@
 import logger from '@overleaf/logger'
 import OError from '@overleaf/o-error'
 import Mongo from '../../../../app/src/Features/Helpers/Mongo.mjs'
-import { GitHubSyncUserCredentials } from '../models/githubSyncUserCredentials.mjs'
+import { GiteaSyncUserCredentials } from '../models/giteaSyncUserCredentials.mjs'
 import { AccessTokenEncryptor } from './AccessTokenEncryptorHelper.mjs'
 import { InvalidTokenError } from './GitSyncErrors.mjs'
 
@@ -25,16 +25,16 @@ async function decryptAccessToken(tokenEncrypted) {
 
 // ------------------------- exports -------------------------- //
 async function getUserToken(userId) {
-  const credentials = await GitHubSyncUserCredentials.findOne(normalizeQuery({ userId }))
+  const credentials = await GiteaSyncUserCredentials.findOne(normalizeQuery({ userId }))
   if (!credentials) throw new InvalidTokenError('no user token', { userId, status: 400 })
-  return await decryptAccessToken(credentials.github)
+  return await decryptAccessToken(credentials.gitea)
 }
 
 async function saveUserToken(userId, accessToken) {
   const tokenEncrypted = await encryptAccessToken(accessToken)
-  await GitHubSyncUserCredentials.findOneAndUpdate(
+  await GiteaSyncUserCredentials.findOneAndUpdate(
     normalizeQuery({ userId }),
-    { $set: { github: tokenEncrypted } },
+    { $set: { gitea: tokenEncrypted } },
     { upsert: true }
   )
 }
@@ -49,11 +49,11 @@ async function removeUserToken(userId) {
   }
   // fire-and-forget, but still handle errors
   if (token) {
-    GitHubApiClient.revokeToken(token).catch(err => {
+    GiteaApiClient.revokeToken(token).catch(err => {
       logger.warn({ err, userId }, 'failed to revoke user token')
     })
   }
-  await GitHubSyncUserCredentials.deleteOne(normalizeQuery({ userId }))
+  await GiteaSyncUserCredentials.deleteOne(normalizeQuery({ userId }))
   return
 }
 

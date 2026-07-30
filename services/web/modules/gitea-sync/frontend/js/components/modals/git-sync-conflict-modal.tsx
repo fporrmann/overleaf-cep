@@ -24,11 +24,11 @@ const GitSyncConflictModal = ({ projectSyncState, handleHide, setModalStatus }: 
       <OLModalBody>
         <OLNotification
           type="warning"
-          content={t('github_merge_failed_error', { appName })}
+          content={t('gitea_merge_failed_error', { appName })}
         />
         <p className="mt-2">
           <Trans
-            i18nKey="github_manual_merge_user_prompt"
+            i18nKey="gitea_manual_merge_user_prompt"
             values={{sharelatex_branch: projectSyncState.unmergedBranchName }}
             components={[<b />]}
           />
@@ -47,7 +47,7 @@ const GitSyncConflictModal = ({ projectSyncState, handleHide, setModalStatus }: 
             () => setModalStatus('run-merge-resolved')
           }
         >
-          {t('continue_github_merge')}
+          {t('continue_gitea_merge')}
         </OLButton>
       </OLModalFooter>
     </>

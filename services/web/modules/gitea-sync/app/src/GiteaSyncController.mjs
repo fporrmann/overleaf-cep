@@ -4,9 +4,9 @@ import OError from '@overleaf/o-error'
 import HttpErrorHandler from '../../../../app/src/Features/Errors/HttpErrorHandler.mjs'
 import SessionManager from '../../../../app/src/Features/Authentication/SessionManager.mjs'
 import Csrf from '../../../../app/src/infrastructure/Csrf.mjs'
-import GitHubSyncHandler from './GitHubSyncHandler.mjs'
+import GiteaSyncHandler from './GiteaSyncHandler.mjs'
 import TokenManager from './TokenManager.mjs'
-import api from './GitHubApiClient.mjs'
+import api from './GiteaApiClient.mjs'
 import { doGitMerge } from './GitMerge.mjs'
 import { InvalidTokenError, GitNotLinkedError, AlreadyExistsError } from './GitSyncErrors.mjs'
 
@@ -14,7 +14,7 @@ async function getConnectionStatus(req, res) {
   const userId = SessionManager.getLoggedInUserId(req.session)
 
   try {
-    const isConnected = await GitHubSyncHandler.getGitConnState(userId)
+    const isConnected = await GiteaSyncHandler.getGitConnState(userId)
     res.json(isConnected)
   } catch (err) {
     const info = OError.getFullInfo(err)
@@ -30,7 +30,7 @@ async function getProjectState(req, res) {
   const userId = SessionManager.getLoggedInUserId(req.session)
 
   try {
-    const pss = await GitHubSyncHandler.getProjectState(userId, projectId)
+    const pss = await GiteaSyncHandler.getProjectState(userId, projectId)
     return res.json(pss)
   } catch (err) {
     const info = OError.getFullInfo(err)
@@ -43,14 +43,14 @@ async function getProjectState(req, res) {
 
 async function getUserAndOrgs(req, res) {
   const userId = SessionManager.getLoggedInUserId(req.session)
-  const userAndOrgs = await GitHubSyncHandler.getUserAndOrgs(userId)
+  const userAndOrgs = await GiteaSyncHandler.getUserAndOrgs(userId)
   res.json(userAndOrgs)
 }
 async function listUserRepos(req, res) {
   const userId = SessionManager.getLoggedInUserId(req.session)
 
   try {
-    const repos = await GitHubSyncHandler.listUserRepos(userId)
+    const repos = await GiteaSyncHandler.listUserRepos(userId)
     res.json({ repos })
 
   } catch (err) {
@@ -69,7 +69,7 @@ async function getMergeOverview(req, res) {
   const { project_id: projectId } = req.params
   const userId = SessionManager.getLoggedInUserId(req.session)
   try {
-    const commitsAndStatus = await GitHubSyncHandler.getMergeOverview(userId, projectId)
+    const commitsAndStatus = await GiteaSyncHandler.getMergeOverview(userId, projectId)
     res.json(commitsAndStatus)
 
   } catch (err) {
@@ -81,13 +81,13 @@ async function getMergeOverview(req, res) {
   }
 }
 
-// Import a GitHub repository as a new project
+// Import a Gitea repository as a new project
 async function importRepo(req, res) {
   const userId = SessionManager.getLoggedInUserId(req.session)
   const { name, fullName, defaultBranchName } = req.body
 
   try {
-    const projectId = await GitHubSyncHandler.importRepo(userId, name, fullName, defaultBranchName)
+    const projectId = await GiteaSyncHandler.importRepo(userId, name, fullName, defaultBranchName)
     res.json({ projectId })
   } catch (error) {
     logger.error({ error, userId }, 'Failed to import git repository from server')
@@ -142,8 +142,8 @@ async function oauth2Callback(req, res) {
 
   // Save success message in session to display on redirect
   req.session.projectSyncSuccessMessage =
-    req.i18n.translate('github_successfully_linked_description')
-  res.redirect('/user/settings?oauth-complete=github#project-sync')
+    req.i18n.translate('gitea_successfully_linked_description')
+  res.redirect('/user/settings?oauth-complete=gitea#project-sync')
 }
 
 // Unlink user's Git server account
@@ -173,16 +173,16 @@ async function exportProject(req, res) {
   const { project_id: projectId } = req.params
 
   try {
-    await GitHubSyncHandler.exportProject(userId, projectId, req.body)
+    await GiteaSyncHandler.exportProject(userId, projectId, req.body)
 
   } catch (err) {
     const info = OError.getFullInfo(err)
     const errStatus  = info?.status || 500
     logger.error(OError.getFullStack(err))
     logger.error({ info, projectId }, 'Error exporting project')
-    let key = 'github_validation_check'
-    if (err instanceof AlreadyExistsError) key = 'github_validation_name_exists'
-    else if (errStatus === 401 || errStatus === 403) key = 'github_validation_check_auth'
+    let key = 'gitea_validation_check'
+    if (err instanceof AlreadyExistsError) key = 'gitea_validation_name_exists'
+    else if (errStatus === 401 || errStatus === 403) key = 'gitea_validation_check_auth'
     return res.status(errStatus).json({ key, message: err.message })
   }
   res.sendStatus(200)
@@ -202,7 +202,7 @@ async function gitMerge(req, res) {
     const info = OError.getFullInfo(err)
     const errStatus  = info?.status || 500
     logger.error(OError.getFullStack(err))
-    logger.error({ info, projectId }, 'Error syncing project to GitHub')
+    logger.error({ info, projectId }, 'Error syncing project to Gitea')
     return res.status(errStatus).json({ message: err.message })
   }
 }
@@ -212,7 +212,7 @@ async function unlinkRepo(req, res) {
   const { project_id: projectId } = req.params
   const userId = SessionManager.getLoggedInUserId(req.session)
   try {
-    const ownerEmail = await GitHubSyncHandler.unlinkRepo(userId, projectId)
+    const ownerEmail = await GiteaSyncHandler.unlinkRepo(userId, projectId)
     if (ownerEmail) return res.status(403).json({ ownerEmail })
   } catch (err) {
     const info = OError.getFullInfo(err)

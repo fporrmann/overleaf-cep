@@ -13,9 +13,9 @@ import {
   OLModalTitle,
 } from '@/shared/components/ol/ol-modal'
 import OLNotification from '@/shared/components/ol/ol-notification'
-import GithubLogo from '@/shared/svgs/github-logo'
+import GiteaLogo from '@/shared/svgs/gitea-logo'
 
-export const GitHubSyncWidget = function GitHubSyncWidget() {
+export const GiteaSyncWidget = function GiteaSyncWidget() {
   const { t } = useTranslation()
   const { appName } = getMeta('ol-ExposedSettings')
 
@@ -36,7 +36,7 @@ export const GitHubSyncWidget = function GitHubSyncWidget() {
   const [showUnlinkModal, setShowUnlinkModal] = useState(false)
 
   const handleConnCheck = useCallback(() => {
-    runAsyncConnCheck(getJSON('/user/github-sync/status')).catch(err =>
+    runAsyncConnCheck(getJSON('/user/gitea-sync/status')).catch(err =>
       debugConsole.error(err?.data?.message || err?.message || err),
     )
   }, [runAsyncConnCheck])
@@ -46,7 +46,7 @@ export const GitHubSyncWidget = function GitHubSyncWidget() {
   }, [handleConnCheck])
 
   const handleUnlink = useCallback(() => {
-    runAsyncUnlink(postJSON('/user/github-sync/unlink'))
+    runAsyncUnlink(postJSON('/user/gitea-sync/unlink'))
       .then(() => setConnState(false))
       .catch(err => debugConsole.error(err?.data?.message || err?.message || err))
       .finally(() => setShowUnlinkModal(false))
@@ -56,12 +56,12 @@ export const GitHubSyncWidget = function GitHubSyncWidget() {
     return (
       <div className="settings-widget-container">
         <div>
-          <GithubLogo />
+          <GiteaLogo />
         </div>
 
         <div className="description-container">
           <div className="title-row">
-            <h4>GitHub</h4>
+            <h4>Gitea</h4>
           </div>
 
           <p className="small">
@@ -76,22 +76,22 @@ export const GitHubSyncWidget = function GitHubSyncWidget() {
     <>
       <div className="settings-widget-container">
         <div>
-          <GithubLogo size={40} />
+          <GiteaLogo size={40} />
         </div>
 
         <div className="description-container">
           <div className="title-row">
-            <h4 id="github-sync">GitHub</h4>
+            <h4 id="gitea-sync">Gitea</h4>
           </div>
 
           <p className="small">
-            {t('github_sync_description', { appName })}
+            {t('gitea_sync_description', { appName })}
           </p>
 
           {isErrorConnCheck && (
             <OLNotification
               type="error"
-              content={t('github_sync_error')}
+              content={t('gitea_sync_error')}
             />
           )}
 
@@ -122,7 +122,7 @@ export const GitHubSyncWidget = function GitHubSyncWidget() {
           ) : (
             <OLButton
               variant="secondary"
-              href="/user/github-sync/oauth2"
+              href="/user/gitea-sync/oauth2"
             >
               {t('link')}
             </OLButton>
@@ -131,7 +131,7 @@ export const GitHubSyncWidget = function GitHubSyncWidget() {
       </div>
 
       <OLModal
-        id="git-sync-modal"
+        id="gitea-sync-modal"
         show={showUnlinkModal}
         onHide={() => setShowUnlinkModal(false)}
         backdrop="static"
@@ -139,15 +139,15 @@ export const GitHubSyncWidget = function GitHubSyncWidget() {
         <OLModalHeader>
           <OLModalTitle>
             {t('unlink_provider_account_title', {
-              provider: 'GitHub',
+              provider: 'Gitea',
             })}
           </OLModalTitle>
         </OLModalHeader>
 
         <OLModalBody>
           <p>
-            {t('unlink_github_warning', {
-              provider: 'GitHub',
+            {t('unlink_gitea_warning', {
+              provider: 'Gitea',
             })}
           </p>
         </OLModalBody>

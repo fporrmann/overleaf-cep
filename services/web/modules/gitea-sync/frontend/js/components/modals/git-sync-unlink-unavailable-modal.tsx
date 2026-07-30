@@ -17,7 +17,7 @@ const GitSyncUnlinkUnavailableModal = ({
   handleHide,
   setModalStatus,
   projectId,
-}: GitSyncInitModalProps) => {
+}: GitSyncUnlinkUnavailableModalProps) => {
   const { t } = useTranslation()
 
   const {
@@ -27,7 +27,7 @@ const GitSyncUnlinkUnavailableModal = ({
   } = useAsync<void>()
 
   const handleUnlink = () => {
-    runAsync(deleteJSON(`/project/${projectId}/github-sync`))
+    runAsync(deleteJSON(`/project/${projectId}/gitea-sync`))
       .then(() => setModalStatus('need-export'))
       .catch(err => debugConsole.error(err?.data?.message || err?.message || err))
   }
@@ -37,7 +37,7 @@ const GitSyncUnlinkUnavailableModal = ({
       <OLModalBody>
         <OLNotification
           type="error"
-          content={t('github_sync_repository_not_found_description')}
+          content={t('gitea_sync_repository_not_found_description')}
         />
 
         {error && (
@@ -46,7 +46,7 @@ const GitSyncUnlinkUnavailableModal = ({
             content={
               error.info?.statusCode === 403 ? (
                 <Trans
-                  i18nKey="ask_proj_owner_to_unlink_from_current_github"
+                  i18nKey="ask_proj_owner_to_unlink_from_current_gitea"
                   values={{ projectOwnerEmail: error?.data?.ownerEmail ?? '?' }}
                   components={[
                     error?.data?.ownerEmail ? <a href={`mailto:${error.data.ownerEmail}`} /> : <></>
@@ -67,7 +67,7 @@ const GitSyncUnlinkUnavailableModal = ({
             onClick={handleUnlink}
             disabled={isLoading}
           >
-            {t('unlink_github_repository')}
+            {t('unlink_gitea_repository')}
           </OLButton>
 
           <OLButton

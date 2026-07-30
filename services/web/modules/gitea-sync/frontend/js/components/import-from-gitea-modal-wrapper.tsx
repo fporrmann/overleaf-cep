@@ -28,7 +28,7 @@ type GitSyncReposResponse = {
   repos?: GitSyncRepo[]
 }
 
-function ImportFromGitHubModalContent({ handleHide }: { handleHide: () => void }) {
+function ImportFromGiteaModalContent({ handleHide }: { handleHide: () => void }) {
   const { t } = useTranslation()
   const { appName } = getMeta('ol-ExposedSettings')
 
@@ -41,7 +41,7 @@ function ImportFromGitHubModalContent({ handleHide }: { handleHide: () => void }
   } = useAsync<GitSyncReposResponse>()
 
   useEffect(() => {
-    runAsync(getJSON('/user/github-sync/repos'))
+    runAsync(getJSON('/user/gitea-sync/repos'))
       .catch(err => debugConsole.error(err?.data?.message || err?.message || err))
   }, [runAsync])
 
@@ -61,13 +61,15 @@ function ImportFromGitHubModalContent({ handleHide }: { handleHide: () => void }
     }
   }, [handleHide, isImported])
 
-  const showLinkToGitHub = !isImporting && isSuccess && !reposExist
+  let giteaUrl = getMeta('ol-ExposedSettings').giteaUrl || ''
+
+  const showLinkToGitea = !isImporting && isSuccess && !reposExist
   const showRepos = !isImporting && isSuccess && reposExist
 
   const handleImport = (repo: GitSyncRepo) => {
 
     runAsyncImport(
-      postJSON('/project/new/github-sync', {
+      postJSON('/project/new/gitea-sync', {
         body: repo
       })
     )
@@ -80,14 +82,14 @@ function ImportFromGitHubModalContent({ handleHide }: { handleHide: () => void }
   return (
     <>
       <OLModalHeader onClose={handleHide}>
-        <OLModalTitle>{t('import_from_github')}</OLModalTitle>
+        <OLModalTitle>{t('import_from_gitea')}</OLModalTitle>
       </OLModalHeader>
 
       <OLModalBody>
         {isLoading && (
           <span>
             <OLSpinner size="sm" className="me-2"/>
-            {t('loading_github_repositories')}
+            {t('loading_gitea_repositories')}
           </span>
         )}
 
@@ -107,16 +109,16 @@ function ImportFromGitHubModalContent({ handleHide }: { handleHide: () => void }
           </div>
         )}
 
-        {showLinkToGitHub && (
+        {showLinkToGitea && (
           <div className="text-center">
             <p>
-              {t('link_to_github_description', { appName })}
+              {t('link_to_gitea_description', { appName })}
             </p>
             <OLButton
               variant="secondary"
-              href="/user/github-sync/oauth2"
+              href="/user/gitea-sync/oauth2"
             >
-              {t('link_to_github')}
+              {t('link_to_gitea')}
             </OLButton>
           </div>
         )}
@@ -130,7 +132,7 @@ function ImportFromGitHubModalContent({ handleHide }: { handleHide: () => void }
             ) : (
               <>
                 <p className="text-center">
-                  {t('select_github_repository', { appName })}
+                  {t('select_gitea_repository', { appName })}
                 </p>
                 <div className="table-container table-container-bordered">
                   <table className="table table-striped table-hover">
@@ -141,7 +143,7 @@ function ImportFromGitHubModalContent({ handleHide }: { handleHide: () => void }
                             {repo.name}
                             <div className="small">
                               <a
-                                href={`https://github.com/${repo.fullName}`}
+                                href={`${giteaUrl}/${repo.fullName}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
@@ -182,7 +184,7 @@ function ImportFromGitHubModalContent({ handleHide }: { handleHide: () => void }
         {!isImporting && (
         <span className="me-auto">
           <a
-            href="https://help.github.com/en/articles/requesting-organization-approval-for-oauth-apps"
+            href="https://help.gitea.com/en/articles/requesting-organization-approval-for-oauth-apps"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -202,7 +204,7 @@ function ImportFromGitHubModalContent({ handleHide }: { handleHide: () => void }
   )
 }
 
-export default function ImportFromGitHubModal({ onHide }: { onHide: () => void }) {
+export default function ImportFromGiteaModal({ onHide }: { onHide: () => void }) {
   return (
     <OLModal
       id="git-import-modal"
@@ -212,7 +214,7 @@ export default function ImportFromGitHubModal({ onHide }: { onHide: () => void }
       onHide={onHide}
       backdrop="static"
     >
-      <ImportFromGitHubModalContent handleHide={onHide} />
+      <ImportFromGiteaModalContent handleHide={onHide} />
     </OLModal>
   )
 }

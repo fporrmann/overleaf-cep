@@ -13,13 +13,13 @@ let encryptorInstance = null
 /**
  * Get or create a stable encryptor data that persists across container
  * recreations. Priority:
- *   1. GITHUB_CIPHER_PASSWORD || TOKEN_CIPHER_PASSWORD env var (explicit user config)
+ *   1. GITEA_CIPHER_PASSWORD || TOKEN_CIPHER_PASSWORD env var (explicit user config)
  *   2. JSON file with encryptor data in the persistent volume (/var/lib/overleaf/data/)
  *      — auto-generated on first use, survives container rebuilds
  */
 function _getEncryptorData() {
-  const cipherPassword = process.env.GITHUB_TOKEN_CIPHER_PASSWORD || process.env.TOKEN_CIPHER_PASSWORD
-  const cipherLabel = process.env.GITHUB_TOKEN_CIPHER_LABEL ||
+  const cipherPassword = process.env.GITEA_TOKEN_CIPHER_PASSWORD || process.env.TOKEN_CIPHER_PASSWORD
+  const cipherLabel = process.env.GITEA_TOKEN_CIPHER_LABEL ||
                       process.env.TOKEN_CIPHER_LABEL ||
                       TOKEN_CIPHER_LABEL
   if (cipherPassword) {
@@ -31,7 +31,7 @@ function _getEncryptorData() {
     }
   }
   // cipherPassword is not set, use file
-  const cipherFile = process.env.GITHUB_TOKEN_CIPHER_FILE ||
+  const cipherFile = process.env.GITEA_TOKEN_CIPHER_FILE ||
                      process.env.TOKEN_CIPHER_FILE ||
                      TOKEN_CIPHER_FILE
   try {

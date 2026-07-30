@@ -46,7 +46,7 @@ const GitSyncMergeModal = ({
     const claimConflictIsResolved = (modalStatus === 'run-merge-resolved')
 
     runAsync(
-      postJSON(`/project/${projectId}/github-sync/merge`, {
+      postJSON(`/project/${projectId}/gitea-sync/merge`, {
         body: { message: commitMessage, claimConflictIsResolved },
       })
     )
@@ -103,7 +103,7 @@ const GitSyncMergeModal = ({
             className="spinner-border spinner-border-sm"
           ></div>
 
-          {t('importing_and_merging_changes_in_github')}
+          {t('importing_and_merging_changes_in_gitea')}
         </div>
       </OLModalBody>
 

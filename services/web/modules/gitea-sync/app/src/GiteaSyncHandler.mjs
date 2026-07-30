@@ -10,7 +10,7 @@ import ProjectGetter from '../../../../app/src/Features/Project/ProjectGetter.mj
 import ProjectUploadManager from '../../../../app/src/Features/Uploads/ProjectUploadManager.mjs'
 import UserGetter from '../../../../app/src/Features/User/UserGetter.mjs'
 import DocumentUpdaterHandler from '../../../../app/src/Features/DocumentUpdater/DocumentUpdaterHandler.mjs'
-import api from './GitHubApiClient.mjs'
+import api from './GiteaApiClient.mjs'
 import SyncStateManager from './SyncStateManager.mjs'
 import HistoryManager from './HistoryManager.mjs'
 import TokenManager from './TokenManager.mjs'
@@ -139,7 +139,7 @@ async function getMergeOverview(userId, projectId) {
 async function importRepo(userId, projectName, repoFullName, defaultBranchName) {
   const token = await TokenManager.getUserToken(userId)
   const defaultBranchHead = await api.getBranchHead(token, repoFullName, defaultBranchName)
-  const fsPath = Path.join(Settings.path.dumpFolder, `github_import_${crypto.randomUUID()}`)
+  const fsPath = Path.join(Settings.path.dumpFolder, `gitea_import_${crypto.randomUUID()}`)
 
   let project_id
 

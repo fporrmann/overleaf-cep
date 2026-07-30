@@ -25,10 +25,8 @@ if (process.env.GITLAB_SYNC_ENABLED?.toLowerCase() === 'true') {
       url: process.env.GITLAB_SYNC_URL.replace(/\/+$/, ''),
       clientID: process.env.GITLAB_SYNC_CLIENT_ID,
       clientSecret: process.env.GITLAB_SYNC_CLIENT_SECRET,
-      callbackURL: `${siteUrl}/user/gitlab-sync/oauth2/callback`,
+      callbackURL: `${siteUrl}/user/gitea-sync/oauth2/callback`,
       defaultBranch: process.env.GITLAB_DEFAULT_BRANCH || 'main',
-      mergeRequestPollInterval: process.env.GITLAB_MERGE_REQUEST_POLL_INTERVAL_MS || 1000
-      mergeRequestTimeout: process.env.GITLAB_MERGE_REQUEST_TIMEOUT_MS || 60_000
     },
   
     // Delete project sync state from mongo (hook 'projectExpired')

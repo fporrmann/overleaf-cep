@@ -3,7 +3,7 @@ import pLimit from 'p-limit'
 import { createHash } from 'crypto'
 import logger from '@overleaf/logger'
 import SyncStateManager from './SyncStateManager.mjs'
-import api from './GitHubApiClient.mjs'
+import api from './GiteaApiClient.mjs'
 import HistoryManager from './HistoryManager.mjs'
 import { GitConflictError } from './GitSyncErrors.mjs'
 import TokenManager from './TokenManager.mjs'
@@ -407,7 +407,7 @@ async function resolveDetachedSyncState(
   // GH: in conflicted files remote changes after lastSyncVersion are replayed
   // OL: all changes done in Overleaf after lastSyncVersion are applied
 
-  // Blobs referenced in conflictBaseEntries in theory could be lost, but for GitHub,
+  // Blobs referenced in conflictBaseEntries in theory could be lost, but for Gitea,
   // GitLab and Gitea, blobs from historical commits are normally retained for a
   // very long time so the practical probability of failure is likely close to zero.
   // TODO: anyway, if error is thrown by api.createTree, upload all blobs
@@ -524,13 +524,13 @@ async function applyGitSnapshotToProject({ token, userId, projectId, repoFullNam
   await Promise.all(
     updates.map(path => limit(async () => {
       const stream = await api.getBlobStream(token, repoFullName, lastSyncCommit, path)
-      return UpdateMerger.promises.mergeUpdate(userId, projectId, '/' + path, stream, 'github')
+      return UpdateMerger.promises.mergeUpdate(userId, projectId, '/' + path, stream, 'gitea')
     }))
   )
   const localLimit = pLimit(5)
   await Promise.all(
     deletions.map(path => localLimit(() => {
-      return UpdateMerger.promises.deleteUpdate(userId, projectId, '/' + path, 'github')
+      return UpdateMerger.promises.deleteUpdate(userId, projectId, '/' + path, 'gitea')
     }))
   )
 
