@@ -19,7 +19,7 @@ if (process.env.GITEA_SYNC_ENABLED?.toLowerCase() === 'true') {
         import('./app/src/SyncStateManager.mjs'),
         import('./app/src/TokenManager.mjs'),
       ])
-  
+
     const siteUrl = Settings.siteUrl.replace(/\/+$/, '') || 'http://localhost'
 	Settings.giteaSync = {
 	  url: process.env.GITEA_SYNC_URL.replace(/\/+$/, ''),
@@ -27,7 +27,7 @@ if (process.env.GITEA_SYNC_ENABLED?.toLowerCase() === 'true') {
 	  clientSecret: process.env.GITEA_SYNC_CLIENT_SECRET,
 	  callbackURL: `${siteUrl}/user/gitea-sync/oauth2/callback`
 	},
-  
+
     // Delete project sync state from mongo (hook 'projectExpired')
     Modules.hooks.attach('projectExpired', async projectId => {
       try {
@@ -37,7 +37,7 @@ if (process.env.GITEA_SYNC_ENABLED?.toLowerCase() === 'true') {
         logger.warn({ projectId, err }, 'on project expire: failed to remove Gitea sync state')
       }
     })
-  
+
     // Delete user gitea token from mongo (hook 'expireDeletedUser')
     Modules.hooks.attach('expireDeletedUser', async userId => {
       try {
@@ -46,7 +46,7 @@ if (process.env.GITEA_SYNC_ENABLED?.toLowerCase() === 'true') {
         logger.warn({ userId, err }, 'on user expire: failed removing user token')
       }
     })
-  
+
     GiteaSyncModule = {
       router: GiteaSyncRouter,
     }
