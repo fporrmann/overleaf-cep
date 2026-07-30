@@ -152,10 +152,12 @@ function fetchGiteaStream(url, options, operation) {
 
 // OAuth
 function getOAuth2Url() {
+  logger.info({ url: GITEA_URL, clientID: Settings.giteaSync.clientID }, 'Generating Gitea OAuth2 URL')
   const oAuthUrl = new URL(`${GITEA_URL}/login/oauth/authorize`)
   oAuthUrl.searchParams.append('client_id', Settings.giteaSync.clientID)
   oAuthUrl.searchParams.append('redirect_uri', Settings.giteaSync.callbackURL)
-  oAuthUrl.searchParams.append('scope', 'read:org,repo,workflow')
+  oAuthUrl.searchParams.append('response_type', 'code')
+  oAuthUrl.searchParams.append('scope', 'read:organization,repository')
   return oAuthUrl
 }
 
@@ -168,6 +170,7 @@ function exchangeCodeForToken(code) {
       client_id: Settings.giteaSync.clientID,
       client_secret: Settings.giteaSync.clientSecret,
       redirect_uri: Settings.giteaSync.callbackURL,
+      grant_type: "authorization_code",
     },
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
   }, 'exchangeCodeForToken').then(r => r.access_token)
@@ -194,30 +197,6 @@ function getUser(token) {
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   }, 'getUser').then(({ id, login, name }) => ({ id, login, name }))
 }
-
-/*
-async function getUserAndOrgsREST(token) {
-  const user = await fetchGiteaJson(`${GITEA_API_BASE}/user`, {
-    headers: buildHeaders(token),
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  }, 'getUserAndOrgs:user')
-
-  const page = 1
-  const params = new URLSearchParams({
-    page: page.toString(),
-    per_page: MAX_PER_PAGE.toString(),
-  })
-  const orgs = await fetchGiteaJson(`${GITEA_API_BASE}/user/orgs?${params}`, {
-    headers: buildHeaders(token),
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  }, 'getUserAndOrgs:orgs')
-
-  return {
-    user: user.login,
-    orgs: orgs.map(o => o.login)
-  }
-}
-*/
 
 async function getUserAndOrgs(token) {
   const query = `
