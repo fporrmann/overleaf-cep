@@ -17,6 +17,7 @@ const trackChangesModuleAvailable =
  * @property {string | undefined}  apis.linkedUrlProxy.url
  * @property {boolean | undefined} enableGithubSync
  * @property {boolean | undefined} enableGitLabSync
+ * @property {boolean | undefined} enableGiteaSync
  * @property {boolean | undefined} enableGitBridge
  * @property {boolean | undefined} enableHomepage
  * @property {boolean | undefined} enableSaml
@@ -64,6 +65,8 @@ const Features = {
         return Boolean(Settings.enableGithubSync)
       case 'gitlab-sync':
         return Boolean(Settings.enableGitLabSync)
+      case 'gitea-sync':
+        return Boolean(Settings.enableGiteaSync)
       case 'git-bridge':
         return Boolean(Settings.enableGitBridge)
       case 'oauth':

@@ -420,6 +420,8 @@ export default async function (webRouter, privateApiRouter, publicApiRouter) {
       githubSyncEnabled: !!Settings.githubSync?.clientID && !!Settings.githubSync?.clientSecret,
       gitlabSyncEnabled: !!Settings.gitlabSync,
       gitlabUrl: Settings.gitlabSync?.url,
+      giteaSyncEnabled: !!Settings.giteaSync?.clientID && !!Settings.giteaSync?.clientSecret,
+      giteaUrl: Settings.giteaSync?.url || '',
       zoteroEnabled: !!Settings.zotero?.clientKey && !!Settings.zotero?.clientSecret,
       enablePandocConversions: Settings.enablePandocConversions,
       mixpanelLabsToken:

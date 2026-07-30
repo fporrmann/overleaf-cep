@@ -13,6 +13,7 @@ const integrationPanelComponents = allIntegrationPanelComponents.filter(
     (getMeta('ol-gitBridgeEnabled') || !path.includes('git-bridge')) &&
     (getMeta('ol-ExposedSettings').githubSyncEnabled || !path.includes('github-sync')) &&
     (getMeta('ol-ExposedSettings').gitlabSyncEnabled || !path.includes('gitlab-sync')) &&
+    (getMeta('ol-ExposedSettings').giteaSyncEnabled || !path.includes('gitea-sync')) &&
     (getMeta('ol-ExposedSettings').zoteroEnabled || !path.includes('zotero'))
 )
 

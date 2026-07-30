@@ -21,6 +21,7 @@ export interface Meta {
           | 'git-bridge'
           | 'github'
 		  | 'gitlab'
+		  | 'gitea'
           | 'history-resync'
           | 'history-migration'
       }
