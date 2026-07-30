@@ -53,6 +53,8 @@ export type ExposedSettings = {
   templatesEnabled?: boolean
   linkedInInsightsPartnerId?: string
   githubSyncEnabled: boolean
+  gitlabSyncEnabled: boolean
   zoteroEnabled: boolean
   enablePandocConversions: boolean
+  gitlabUrl: string
 }
