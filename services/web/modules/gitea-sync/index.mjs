@@ -10,6 +10,14 @@ if (process.env.GITEA_SYNC_ENABLED?.toLowerCase() === 'true') {
   if (!process.env.GITEA_SYNC_URL || !process.env.GITEA_SYNC_CLIENT_ID || !process.env.GITEA_SYNC_CLIENT_SECRET) {
     logger.warn({}, 'Gitea Sync module is enabled but not all mandatory environment variables are set, stopping module initialization')
   } else {
+    const siteUrl = Settings.siteUrl.replace(/\/+$/, '') || 'http://localhost'
+	Settings.giteaSync = {
+	  url: process.env.GITEA_SYNC_URL.replace(/\/+$/, ''),
+	  clientID: process.env.GITEA_SYNC_CLIENT_ID,
+	  clientSecret: process.env.GITEA_SYNC_CLIENT_SECRET,
+	  callbackURL: `${siteUrl}/user/gitea-sync/oauth2/callback`,
+	}
+
     const [{ default: GiteaSyncRouter },
            { default: SyncStateManager },
            { default: TokenManager }
@@ -19,14 +27,6 @@ if (process.env.GITEA_SYNC_ENABLED?.toLowerCase() === 'true') {
         import('./app/src/SyncStateManager.mjs'),
         import('./app/src/TokenManager.mjs'),
       ])
-
-    const siteUrl = Settings.siteUrl.replace(/\/+$/, '') || 'http://localhost'
-	Settings.giteaSync = {
-	  url: process.env.GITEA_SYNC_URL.replace(/\/+$/, ''),
-	  clientID: process.env.GITEA_SYNC_CLIENT_ID,
-	  clientSecret: process.env.GITEA_SYNC_CLIENT_SECRET,
-	  callbackURL: `${siteUrl}/user/gitea-sync/oauth2/callback`
-	},
 
     // Delete project sync state from mongo (hook 'projectExpired')
     Modules.hooks.attach('projectExpired', async projectId => {
