@@ -24,6 +24,7 @@ import {
 const GITEA_URL = Settings.giteaSync?.url
 const GITEA_API_BASE = `${GITEA_URL}/api/v1`
 const GITEA_GRAPHQL = `${GITEA_API_BASE}/graphql`
+const GITEA_DEFAULT_BRANCH = Settings.giteaSync?.defaultBranch
 const MAX_PER_PAGE = 100  // Gitea REST API limit
 
 const REQUEST_TIMEOUT_MS = 60 * 1000
@@ -50,7 +51,7 @@ function isRateLimitError(response) {
 }
 
 function isRepositoryAlreadyExistsError(err) {
-  if (err.response?.status !== 422) {
+  if (err.response?.status !== 409) {
     return false
   }
 
@@ -64,18 +65,9 @@ function isRepositoryAlreadyExistsError(err) {
     }
   }
 
-  const errors = body?.errors
+  const msg = body?.message
 
-  if (!Array.isArray(errors)) {
-    return false
-  }
-
-  return errors.some(error =>
-    error?.resource === 'Repository' &&
-    error?.field === 'name' &&
-    typeof error?.message === 'string' &&
-    error.message.toLowerCase().includes('already exists')
-  )
+  return msg && typeof msg === 'string' && msg.toLowerCase().includes('already exists')
 }
 
 function normalizeGiteaError(err, operation) {
@@ -101,18 +93,18 @@ function normalizeGiteaError(err, operation) {
   }
 
   if (status === 409) {
+    if (isRepositoryAlreadyExistsError(err)) {
+      throw new AlreadyExistsError('Repository already exists', { status }, err)
+    }
+  }
+
+  if (status === 409) {
     throw new GitConflictError()
   }
 
   if (status === 403 || status === 429) {
     if (isRateLimitError(err.response)) throw new RateLimitError('Rate limit exeeded', { status: 429 }, err)
     throw new PermissionDeniedError('Permission denied', { status: 403 }, err)
-  }
-
-  if (status === 422) {
-    if (isRepositoryAlreadyExistsError(err)) {
-      throw new AlreadyExistsError('Repository already exists', { status }, err)
-    }
   }
 
   throw new ProviderRequestError('Gitea request failed', { status }, err)
@@ -182,12 +174,12 @@ function exchangeCodeForToken(code) {
 }
 
 function refreshToken(refreshToken) {
-	return fetchGitLabJson(`${GITLAB_URL}/login/oauth/access_token`, {
+	return fetchGiteaJson(`${GITEA_URL}/login/oauth/access_token`, {
 		method: 'POST',
 		headers: buildHeaders(),
 		json: {
-			client_id: Settings.gitlabSync.clientID,
-			client_secret: Settings.gitlabSync.clientSecret,
+			client_id: Settings.giteaSync.clientID,
+			client_secret: Settings.giteaSync.clientSecret,
 			grant_type: 'refresh_token',
 			refresh_token: refreshToken
 		},
@@ -234,7 +226,8 @@ function createRepo(token, { name, description, isPublic, org }) {
       name,
       description,
       private: !isPublic,
-      auto_init: true,
+	  default_branch: GITEA_DEFAULT_BRANCH,
+      auto_init: false,
     },
     signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
   }, 'createRepo')
@@ -280,15 +273,18 @@ async function listUserRepos(token) {
 
 // Git (blobs / trees / commits)
 function uploadBlob(token, repoFullName, buffer) {
-  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/blobs`, {
-    method: 'POST',
-    headers: buildHeaders(token),
-    json: {
-      content: buffer,
-      encoding: 'base64',
-    },
-    signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
-  }, 'uploadBlob').then(r => r.sha)
+  void token
+  void repoFullName
+
+  if (Buffer.isBuffer(buffer)) {
+    return Promise.resolve(buffer.toString('base64'))
+  }
+
+  if (typeof buffer === 'string') {
+    return Promise.resolve(buffer)
+  }
+
+  return Promise.resolve(String(buffer))
 }
 
 function getBlobStream(token, repoFullName, ref, path) {
@@ -303,34 +299,54 @@ function getBlobStream(token, repoFullName, ref, path) {
   }, 'getBlobStream')
 }
 
-function createTree(token, repoFullName, entries, base_tree) {
-  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/trees`, {
-    method: 'POST',
-    headers: buildHeaders(token),
-    json: {
-      tree: entries.map(e => ({
-        path: e.path,
-        sha: e.sha,
-        mode: '100644',
-        type: 'blob',
-      })),
-      ...(base_tree && { base_tree }),
-    },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  }, 'createTree').then(r => r.sha)
+function createTree(token, repoFullName, entries, baseTree) {
+  void token
+  void repoFullName
+
+  const existingPaths = new Set((baseTree || []).map(entry => entry.path))
+  const files = []
+
+  for (const entry of entries) {
+    if (entry.sha == null) {
+      files.push({
+        operation: 'delete',
+        path: entry.path,
+        sha: entry.sha,
+      })
+      continue
+    }
+
+    files.push({
+      operation: existingPaths.has(entry.path) ? 'update' : 'create',
+      path: entry.path,
+      content: entry.content,
+      ...(existingPaths.has(entry.path) && entry.sha ? { sha: entry.sha } : {}),
+    })
+  }
+
+  return Promise.resolve({ 
+    baseTree: baseTree || [],
+    entries: files,
+  })
 }
 
-function createCommit(token, repoFullName, { tree, message, parents = [] }) {
-  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/commits`, {
-    method: 'POST',
-    headers: buildHeaders(token),
-    json: {
-      tree,
-      message,
-      parents,
+function createCommit(token, repoFullName, { tree, message, branch }) {
+  const payload = {
+    branch: branch || GITEA_DEFAULT_BRANCH,
+    message,
+    files: tree.entries,
+  }
+
+  return fetchGiteaJson(
+    `${GITEA_API_BASE}/repos/${repoFullName}/contents`,
+    {
+      method: 'POST',
+      headers: buildHeaders(token),
+      json: payload,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  }, 'createCommit').then(r => r.sha)
+    'createCommit'
+  ).then(r => r.commit.sha)
 }
 
 function getCommitTree(token, repoFullName, commit) {
