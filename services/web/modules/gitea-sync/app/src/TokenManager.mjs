@@ -4,6 +4,7 @@ import Mongo from '../../../../app/src/Features/Helpers/Mongo.mjs'
 import { GiteaSyncUserCredentials } from '../models/giteaSyncUserCredentials.mjs'
 import { AccessTokenEncryptor } from './AccessTokenEncryptorHelper.mjs'
 import { InvalidTokenError } from './GitSyncErrors.mjs'
+import api from './GiteaApiClient.mjs'
 
 const { normalizeQuery } = Mongo
 
@@ -23,11 +24,61 @@ async function decryptAccessToken(tokenEncrypted) {
   }
 }
 
+async function refreshToken(userId, decData) {
+	logger.info({ userId }, "refreshing Gitea token")
+
+	if (!decData.refresh_token) {
+		logger.error("refresh_token invalid")
+		return false
+	}
+
+	let token
+	let refresh_token
+	let refresh_timestamp
+
+	try {
+		[token, refresh_token, refresh_timestamp] = await api.refreshToken(decData.refresh_token)
+		if (!token || !refresh_token) {
+			HttpErrorHandler.badRequest(req, res, 'Failed to refresh access token')
+			return false
+		}
+	} catch (err) {
+		const info = OError.getFullInfo(err)
+		logger.error(OError.getFullStack(err))
+		logger.error({ info, userId }, 'Failed to refresh access token')
+		HttpErrorHandler.badRequest(req, res, err.message || 'Bad request')
+		return false
+	}
+
+	try {
+		await saveUserToken(userId, { token, refresh_token, refresh_timestamp })
+	} catch (err) {
+		const info = OError.getFullInfo(err)
+		const errStatus = info?.status || 500
+		logger.error(OError.getFullStack(err))
+		logger.error({ info, userId }, 'Error saving user token')
+		HttpErrorHandler.handleErrorByStatusCode(req, res, err, errStatus)
+		return false
+	}
+
+	return true
+}
+
 // ------------------------- exports -------------------------- //
 async function getUserToken(userId) {
   const credentials = await GiteaSyncUserCredentials.findOne(normalizeQuery({ userId }))
   if (!credentials) throw new InvalidTokenError('no user token', { userId, status: 400 })
-  return await decryptAccessToken(credentials.gitea)
+  let decData = await decryptAccessToken(credentials.gitea)
+
+  const now = Math.floor(Date.now() / 1000);
+  if (!decData.refresh_timestamp || decData.refresh_timestamp < now) {
+	const refreshed = await refreshToken(userId, decData)
+	if (refreshed) {
+		return await getUserToken(userId)
+	}
+  }
+
+  return decData.token
 }
 
 async function saveUserToken(userId, accessToken) {
@@ -43,13 +94,13 @@ async function saveUserToken(userId, accessToken) {
 async function removeUserToken(userId) {
   let token
   try {
-    const token = await getUserToken(userId)
+    token = await getUserToken(userId)
   } catch (err) {
     logger.warn({ err, userId }, 'failed to get user token')
   }
   // fire-and-forget, but still handle errors
   if (token) {
-    GiteaApiClient.revokeToken(token).catch(err => {
+      api.revokeToken(token).catch(err => {
       logger.warn({ err, userId }, 'failed to revoke user token')
     })
   }

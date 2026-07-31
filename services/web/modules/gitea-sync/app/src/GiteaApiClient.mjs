@@ -79,7 +79,8 @@ function isRepositoryAlreadyExistsError(err) {
 }
 
 function normalizeGiteaError(err, operation) {
-  logger.error({ operation }, 'Gitea API request failed')
+	const ebody = err.body || {}
+  logger.error({ operation, err, ebody }, 'Gitea API request failed')
 
   if (err.name === 'AbortError') {
     throw new ProviderRequestError('Gitea request timed out', { status: 504 }, err)
@@ -148,6 +149,10 @@ function fetchGiteaStream(url, options, operation) {
   })
 }
 
+function getTokenRefreshTimestamp(token, safetyMarginInSec = 300) {
+    return (Date.now() / 1000) + token.expires_in - safetyMarginInSec;
+}
+
 // ---------------------- exports ------------------------------- //
 
 // OAuth
@@ -173,21 +178,25 @@ function exchangeCodeForToken(code) {
       grant_type: "authorization_code",
     },
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  }, 'exchangeCodeForToken').then(r => r.access_token)
+  }, 'exchangeCodeForToken').then(r => [r.access_token, r.refresh_token, getTokenRefreshTimestamp(r)])
+}
+
+function refreshToken(refreshToken) {
+	return fetchGitLabJson(`${GITLAB_URL}/login/oauth/access_token`, {
+		method: 'POST',
+		headers: buildHeaders(),
+		json: {
+			client_id: Settings.gitlabSync.clientID,
+			client_secret: Settings.gitlabSync.clientSecret,
+			grant_type: 'refresh_token',
+			refresh_token: refreshToken
+		},
+		signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+	}, 'refreshToken').then(r => [r.access_token, r.refresh_token, getTokenRefreshTimestamp(r)])
 }
 
 function revokeToken(token) {
-  const { clientID, clientSecret } = Settings.giteaSync
-  return fetchGiteaNothing(`${GITEA_API_BASE}/applications/${clientID}/token`, {
-    method: 'DELETE',
-    headers: buildHeaders(),
-    basicAuth: {
-      user: clientID,
-      password: clientSecret,
-    },
-    json: { access_token: token },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  }, 'revokeToken')
+	return true // Gitea currently does not implement a way to revoke a token
 }
 
 // user, orgs, permissions
@@ -451,6 +460,7 @@ export default {
   maxConcurrency,
   getOAuth2Url,
   exchangeCodeForToken,
+  refreshToken,
   revokeToken,
   getUser,
   getUserAndOrgs,
