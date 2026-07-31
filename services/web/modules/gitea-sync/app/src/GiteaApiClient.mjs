@@ -204,35 +204,16 @@ function getUser(token) {
   return fetchGiteaJson(`${GITEA_API_BASE}/user`, {
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  }, 'getUser').then(({ id, login, name }) => ({ id, login, name }))
+  }, 'getUser').then(({ id, login, login_name }) => ({ id, login, name: login_name }))
 }
 
+// TODO: Fully implement this
 async function getUserAndOrgs(token) {
-  const query = `
-    query {
-      viewer {
-        login
-        organizations(first: 100) {
-          nodes {
-            login
-            viewerCanCreateRepositories
-          }
-        }
-      }
-    }
-  `
-  const json = await fetchGiteaJson(GITEA_GRAPHQL, {
-    method: 'POST',
-    headers: buildHeaders(token),
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    json: { query }
-  }, 'getUserAndOrgs')
-
-  const viewer = json.data.viewer
+  const { id, login, name } = await getUser(token)
 
   return {
-    user: viewer.login,
-    orgs: viewer.organizations.nodes.map(o => o.login)
+    user: login,
+    orgs: []
   }
 }
 
