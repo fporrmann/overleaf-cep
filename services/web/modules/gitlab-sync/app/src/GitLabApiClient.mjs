@@ -193,6 +193,19 @@ function getTokenRefreshTimestamp(token, safetyMarginInSec = 300) {
 	return token.created_at + token.expires_in - safetyMarginInSec;
 }
 
+
+async function compareCommitsFull(token, repoFullName, from, to) {
+  const url = new URL(`${GITLAB_API_BASE}/projects/${projectPath(repoFullName)}/repository/compare`)
+  url.searchParams.set('from', from)
+  url.searchParams.set('to', to)
+
+  return await fetchGitLabJson(url.toString(), {
+	headers: buildHeaders(token),
+	signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+  }, 'compareCommitsFull')
+}
+
+
 // ---------------------- exports ------------------------------- //
 
 // OAuth
@@ -448,31 +461,40 @@ async function listBlobsAtCommit(token, repoFullName, commit) {
 }
 
 async function getBlobContent(token, repoFullName, sha) {
+  if (!sha) return null
+
   const url = `${GITLAB_API_BASE}/projects/${projectPath(repoFullName)}/repository/blobs/${sha}`
 
-  try {
-	const json = await fetchGitLabJson(url, {
+	return await fetchGitLabJson(url, {
 	  headers: buildHeaders(token),
 	  signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
-	}, 'getBlobContent')
-	return json.content
-  } catch (err) {
-    throw OError.tag(err, 'Failed to fetch blob content from GitLab', { repoFullName, sha })
-  }
+	}, 'getBlobContent').then(r => Buffer.from(r.content, 'base64'))
 }
 
 async function listNewCommitsWithStatus(token, fullName, branchName, fromCommit) {
-  const url = new URL(`${GITLAB_API_BASE}/projects/${projectPath(fullName)}/repository/compare`)
-  url.searchParams.set('from', fromCommit)
-  url.searchParams.set('to', branchName)
-  url.searchParams.set('straight', 'true')
+  const forward = await compareCommitsFull(token, fullName, fromCommit, branchName);
+  const reverse = await compareCommitsFull(token, fullName, branchName, fromCommit);
+  const forwardHasCommits = forward.commits.length > 0;
+  const reverseHasCommits = reverse.commits.length > 0;
 
-  const data = await fetchGitLabJson(url.toString(), {
-    headers: buildHeaders(token),
-    signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
-  }, 'listNewCommitsWithStatus')
+  let diverged = false
 
-  const commits = (data.commits || []).map(c => ({
+  if (forward.compare_same_ref) {
+    // Identical
+  }
+  else if (forwardHasCommits && !reverseHasCommits) {
+    // Ahead
+  }
+  else if (!forwardHasCommits && reverseHasCommits) {
+    // Behind (here also considered a diverged state)
+    diverged = true
+  }
+  else if (forwardHasCommits && reverseHasCommits) {
+    // Diverged
+    diverged = true
+  }
+
+  const commits = (forward.commits || []).map(c => ({
     message: c.message || c.title || '',
     author: {
       name: c.author_name || '',
@@ -482,7 +504,7 @@ async function listNewCommitsWithStatus(token, fullName, branchName, fromCommit)
     sha: c.id,
   }))
 
-  return { commits, diverged: commits.length > 0 }
+  return { commits, diverged }
 }
 
 // branches

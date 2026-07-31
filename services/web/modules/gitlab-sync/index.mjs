@@ -10,16 +10,6 @@ if (process.env.GITLAB_SYNC_ENABLED?.toLowerCase() === 'true') {
   if (!process.env.GITLAB_SYNC_URL || !process.env.GITLAB_SYNC_CLIENT_ID || !process.env.GITLAB_SYNC_CLIENT_SECRET) {
     logger.warn({}, 'GitLab Sync module is enabled but not all mandatory envirionment variables are set, stopping module initialization')
   } else {
-    const [{ default: GitLabSyncRouter },
-           { default: SyncStateManager },
-           { default: TokenManager }
-          ] =
-      await Promise.all([
-        import('./app/src/GitLabSyncRouter.mjs'),
-        import('./app/src/SyncStateManager.mjs'),
-        import('./app/src/TokenManager.mjs'),
-      ])
-  
     const siteUrl = Settings.siteUrl.replace(/\/+$/, '') || 'http://localhost'
     Settings.gitlabSync = {
       url: process.env.GITLAB_SYNC_URL.replace(/\/+$/, ''),
@@ -29,8 +19,18 @@ if (process.env.GITLAB_SYNC_ENABLED?.toLowerCase() === 'true') {
       defaultBranch: process.env.GITLAB_DEFAULT_BRANCH || 'main',
       mergeRequestPollInterval: process.env.GITLAB_MERGE_REQUEST_POLL_INTERVAL_MS || 1000,
       mergeRequestTimeout: process.env.GITLAB_MERGE_REQUEST_TIMEOUT_MS || 60_000,
-    },
-  
+    }
+
+    const [{ default: GitLabSyncRouter },
+           { default: SyncStateManager },
+           { default: TokenManager }
+          ] =
+      await Promise.all([
+        import('./app/src/GitLabSyncRouter.mjs'),
+        import('./app/src/SyncStateManager.mjs'),
+        import('./app/src/TokenManager.mjs'),
+      ])
+
     // Delete project sync state from mongo (hook 'projectExpired')
     Modules.hooks.attach('projectExpired', async projectId => {
       try {

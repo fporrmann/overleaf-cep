@@ -125,39 +125,27 @@ async function resolveCleanSyncState(
 
   try
   {
-      // Possible changes in OL
-      const olBranchHead =
-        await exportChangesToGit({
-          token,
-          projectId,
-          repoFullName,
-          lastSyncVersion: projectSyncState.lastSyncVersion,
-          currentVersion,
-          message,
-          baseCommit: projectSyncState.lastSyncCommit,
-        })
+      // Possible changes only in OL
+	  if (defaultBranchHead === projectSyncState.lastSyncCommit) {
+        const olBranchHead =
+          await exportChangesToGit({
+            token,
+            projectId,
+            repoFullName,
+            lastSyncVersion: projectSyncState.lastSyncVersion,
+            currentVersion,
+            message,
+            baseCommit: projectSyncState.lastSyncCommit,
+          })
 
 		if (!olBranchHead) {
-        if ( defaultBranchHead === projectSyncState.lastSyncCommit) {
-          await SyncStateManager.updateProjectState(projectId, { lastSyncVersion: currentVersion })
-          return null
-        }
-
-		const lastSyncCommit = defaultBranchHead
-        const lastSyncVersion = await applyGitSnapshotToProject({
-          token,
-          userId,
-          projectId,
-          repoFullName,
-          lastSyncCommit,
-        })
-        await SyncStateManager.updateProjectState(projectId, { lastSyncVersion, lastSyncCommit })
-        return null
-      }
-
-	  if (defaultBranchHead === projectSyncState.lastSyncCommit) {
-          const lastSyncCommit = olBranchHead
-		  const lastSyncVersion = await applyGitSnapshotToProject({
+          if ( defaultBranchHead === projectSyncState.lastSyncCommit) {
+            await SyncStateManager.updateProjectState(projectId, { lastSyncVersion: currentVersion })
+            return null
+          }
+  
+          const lastSyncCommit = defaultBranchHead
+          const lastSyncVersion = await applyGitSnapshotToProject({
             token,
             userId,
             projectId,
@@ -165,13 +153,27 @@ async function resolveCleanSyncState(
             lastSyncCommit,
           })
           await SyncStateManager.updateProjectState(projectId, { lastSyncVersion, lastSyncCommit })
+          return null
+        }
+
+        const lastSyncCommit = olBranchHead
+        const lastSyncVersion = await applyGitSnapshotToProject({
+          token,
+          userId,
+          projectId,
+          repoFullName,
+          lastSyncCommit,
+        })
+
+		await SyncStateManager.updateProjectState(projectId, { lastSyncVersion, lastSyncCommit })
+        return null
       }
 	}
 	catch (err) {
 		logger.error({ err, projectId }, 'Error during clean sync state resolution, fallback to merge')
 	}
 
-  // Normal commit failed, fallback to merge, first create a temporary branch with OL changes
+  // Git head is ahead of last known sync commit, create a temporary branch with OL changes and perform a merge with the default branch
   const tempBranchName = generateBranchName()
   const olBranchHead =
         await exportChangesToGit({
