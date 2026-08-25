@@ -71,7 +71,7 @@ function isRepositoryAlreadyExistsError(err) {
 }
 
 function normalizeGiteaError(err, operation) {
-	const ebody = err.body || {}
+  const ebody = err.body || {}
   logger.error({ operation, err, ebody }, 'Gitea API request failed')
 
   if (err.name === 'AbortError') {
@@ -174,21 +174,21 @@ function exchangeCodeForToken(code) {
 }
 
 function refreshToken(refreshToken) {
-	return fetchGiteaJson(`${GITEA_URL}/login/oauth/access_token`, {
-		method: 'POST',
-		headers: buildHeaders(),
-		json: {
-			client_id: Settings.giteaSync.clientID,
-			client_secret: Settings.giteaSync.clientSecret,
-			grant_type: 'refresh_token',
-			refresh_token: refreshToken
-		},
-		signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-	}, 'refreshToken').then(r => [r.access_token, r.refresh_token, getTokenRefreshTimestamp(r)])
+  return fetchGiteaJson(`${GITEA_URL}/login/oauth/access_token`, {
+    method: 'POST',
+    headers: buildHeaders(),
+    json: {
+      client_id: Settings.giteaSync.clientID,
+      client_secret: Settings.giteaSync.clientSecret,
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken
+    },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+  }, 'refreshToken').then(r => [r.access_token, r.refresh_token, getTokenRefreshTimestamp(r)])
 }
 
 function revokeToken(token) {
-	return true // Gitea currently does not implement a way to revoke a token
+  return true // Gitea currently does not implement a way to revoke a token
 }
 
 // user, orgs, permissions
@@ -226,7 +226,7 @@ function createRepo(token, { name, description, isPublic, org }) {
       name,
       description,
       private: !isPublic,
-	  default_branch: GITEA_DEFAULT_BRANCH,
+      default_branch: GITEA_DEFAULT_BRANCH,
       auto_init: false,
     },
     signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
@@ -290,7 +290,7 @@ function uploadBlob(token, repoFullName, buffer) {
 function getBlobStream(token, repoFullName, ref, path) {
   const encodedPath = encodeURIComponent(path).replace(/%2F/g, '/')
 
-  return fetchGiteaStream(`${GITEA_API_BASE}/repos/${repoFullName}/contents/${encodedPath}?ref=${ref}`, {
+  return fetchGiteaStream(`${GITEA_API_BASE}/repos/${repoFullName}/raw/${encodedPath}?ref=${ref}`, {
     headers: {
       ...buildHeaders(token),
       Accept: 'application/vnd.gitea.raw',
@@ -393,10 +393,17 @@ async function listNewCommitsWithStatus(token, fullName, branchName, fromCommit)
 
 // branches
 function getBranchHead(token, repoFullName, branchName) {
-  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/ref/heads/${encodeURIComponent(branchName)}`, {
+  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/refs/heads/${encodeURIComponent(branchName)}`, {
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  }, 'getBranchHead').then(r => r.object.sha)
+  }, 'getBranchHead').then(r =>  {
+    if (Array.isArray(r) && r.length > 0) {
+      if (r[0].object && r[0].object.sha) {
+        return r[0].object.sha
+      }
+    }
+    throw new NotFoundError(`Branch ${branchName} not found in repository ${repoFullName}`, { status: 404 })
+  })
 }
 
 function createBranch(token, repoFullName, branchName, sha) {
