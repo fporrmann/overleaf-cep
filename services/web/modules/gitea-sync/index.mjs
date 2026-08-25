@@ -11,12 +11,12 @@ if (process.env.GITEA_SYNC_ENABLED?.toLowerCase() === 'true') {
     logger.warn({}, 'Gitea Sync module is enabled but not all mandatory environment variables are set, stopping module initialization')
   } else {
     const siteUrl = Settings.siteUrl.replace(/\/+$/, '') || 'http://localhost'
-	Settings.giteaSync = {
-	  url: process.env.GITEA_SYNC_URL.replace(/\/+$/, ''),
-	  clientID: process.env.GITEA_SYNC_CLIENT_ID,
-	  clientSecret: process.env.GITEA_SYNC_CLIENT_SECRET,
-	  callbackURL: `${siteUrl}/user/gitea-sync/oauth2/callback`,
-	}
+    Settings.giteaSync = {
+      url: process.env.GITEA_SYNC_URL.replace(/\/+$/, ''),
+      clientID: process.env.GITEA_SYNC_CLIENT_ID,
+      clientSecret: process.env.GITEA_SYNC_CLIENT_SECRET,
+      callbackURL: `${siteUrl}/user/gitea-sync/oauth2/callback`,
+    }
 
     const [{ default: GiteaSyncRouter },
            { default: SyncStateManager },
