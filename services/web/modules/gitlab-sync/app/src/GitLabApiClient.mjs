@@ -190,7 +190,7 @@ async function fetchAllPages(url, options, operation) {
 }
 
 function getTokenRefreshTimestamp(token, safetyMarginInSec = 300) {
-	return token.created_at + token.expires_in - safetyMarginInSec;
+  return token.created_at + token.expires_in - safetyMarginInSec;
 }
 
 // ---------------------- exports ------------------------------- //
@@ -211,8 +211,8 @@ function exchangeCodeForToken(code) {
     headers: buildHeaders(),
     json: {
       client_id: Settings.gitlabSync.clientID,
-	  client_secret: Settings.gitlabSync.clientSecret,
-	  code: code,
+      client_secret: Settings.gitlabSync.clientSecret,
+      code: code,
       grant_type: 'authorization_code',
       redirect_uri: Settings.gitlabSync.callbackURL,
     },
@@ -221,18 +221,18 @@ function exchangeCodeForToken(code) {
 }
 
 function refreshToken(refreshToken) {
-	return fetchGitLabJson(`${GITLAB_URL}/oauth/token`, {
-		method: 'POST',
-		headers: buildHeaders(),
-		json: {
-			client_id: Settings.gitlabSync.clientID,
-			client_secret: Settings.gitlabSync.clientSecret,
-			refresh_token: refreshToken,
-			grant_type: 'refresh_token',
-			redirect_uri: Settings.gitlabSync.callbackURL,
-		},
-		signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-	}, 'refreshToken').then(r => [r.access_token, r.refresh_token, getTokenRefreshTimestamp(r)])
+  return fetchGitLabJson(`${GITLAB_URL}/oauth/token`, {
+    method: 'POST',
+    headers: buildHeaders(),
+    json: {
+      client_id: Settings.gitlabSync.clientID,
+      client_secret: Settings.gitlabSync.clientSecret,
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token',
+      redirect_uri: Settings.gitlabSync.callbackURL,
+    },
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+  }, 'refreshToken').then(r => [r.access_token, r.refresh_token, getTokenRefreshTimestamp(r)])
 }
 
 function revokeToken(token) {
@@ -405,13 +405,13 @@ function createCommit(token, repoFullName, { tree, message, branch, start_sha, f
   const actions = Array.isArray(tree?.entries) ? tree.entries : []
 
   let payload = {
-	branch: branch || GITLAB_DEFAULT_BRANCH,
-	commit_message: message,
-	actions,
+    branch: branch || GITLAB_DEFAULT_BRANCH,
+    commit_message: message,
+    actions,
   }
 
   if (branch && branch != GITLAB_DEFAULT_BRANCH) {
-	payload.start_sha = start_sha
+    payload.start_sha = start_sha
   }
 
   return fetchGitLabJson(`${GITLAB_API_BASE}/projects/${projectPath(repoFullName)}/repository/commits`, {
@@ -451,11 +451,11 @@ async function getBlobContent(token, repoFullName, sha) {
   const url = `${GITLAB_API_BASE}/projects/${projectPath(repoFullName)}/repository/blobs/${sha}`
 
   try {
-	const json = await fetchGitLabJson(url, {
-	  headers: buildHeaders(token),
-	  signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
-	}, 'getBlobContent')
-	return json.content
+    const json = await fetchGitLabJson(url, {
+      headers: buildHeaders(token),
+      signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
+    }, 'getBlobContent')
+    return json.content
   } catch (err) {
     throw OError.tag(err, 'Failed to fetch blob content from GitLab', { repoFullName, sha })
   }
@@ -547,7 +547,7 @@ async function waitForMergeRequestToBeReady(token, repoFullName, mergeRequestIid
     if (status === 'mergeable') {
       return {
         canMerge: true,
-		reason: status,
+        reason: status,
       }
     }
 
@@ -584,12 +584,12 @@ async function mergeOpenMergeRequest(token, repoFullName, mergeRequestIid) {
 function mergeBranch(token, repoFullName, base, head) {
   return createMergeRequest(token, repoFullName, head, base, `Merge ${head} into ${base}`)
     .then(async mergeRequest => {
-	  const ret = await waitForMergeRequestToBeReady(token, repoFullName, mergeRequest.iid)
-	  if (!ret.canMerge) {
-        throw new GitConflictError("Merge request cannot be merged due to conflicts, reason: " + ret.reason)
-     }
+      const ret = await waitForMergeRequestToBeReady(token, repoFullName, mergeRequest.iid)
+      if (!ret.canMerge) {
+          throw new GitConflictError("Merge request cannot be merged due to conflicts, reason: " + ret.reason)
+       }
 
-	  await mergeOpenMergeRequest(token, repoFullName, mergeRequest.iid)
+      await mergeOpenMergeRequest(token, repoFullName, mergeRequest.iid)
       return getBranchHead(token, repoFullName, base)
     })
 }

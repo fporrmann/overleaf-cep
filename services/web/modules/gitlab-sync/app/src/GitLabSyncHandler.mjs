@@ -22,13 +22,13 @@ async function getGitConnState(userId) {
     if (!tokens) return false;
     const { token } = tokens
 
-	await api.getUser(token)
+    await api.getUser(token)
     return true
   } catch (err) {
     if (err instanceof InvalidTokenError) {
       logger.debug( { err, userId }, 'token invalid, treating as not connected')
       return false
-	}
+    }
     throw OError.tag(err, 'failed to validate token', { userId })
   }
 }
