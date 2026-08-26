@@ -16,6 +16,9 @@ if (process.env.GITEA_SYNC_ENABLED?.toLowerCase() === 'true') {
       clientID: process.env.GITEA_SYNC_CLIENT_ID,
       clientSecret: process.env.GITEA_SYNC_CLIENT_SECRET,
       callbackURL: `${siteUrl}/user/gitea-sync/oauth2/callback`,
+      defaultBranch: process.env.GITEA_DEFAULT_BRANCH || 'main',
+      pullRequestPollInterval: process.env.GITEA_PULL_REQUEST_POLL_INTERVAL_MS || 5000,
+      pullRequestTimeout: process.env.GITEA_PULL_REQUEST_TIMEOUT_MS || 60_000,
     }
 
     const [{ default: GiteaSyncRouter },

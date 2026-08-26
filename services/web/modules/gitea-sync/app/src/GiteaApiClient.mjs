@@ -23,12 +23,15 @@ import {
 
 const GITEA_URL = Settings.giteaSync?.url
 const GITEA_API_BASE = `${GITEA_URL}/api/v1`
-const GITEA_GRAPHQL = `${GITEA_API_BASE}/graphql`
 const GITEA_DEFAULT_BRANCH = Settings.giteaSync?.defaultBranch
 const MAX_PER_PAGE = 100  // Gitea REST API limit
 
 const REQUEST_TIMEOUT_MS = 60 * 1000
 const REQUEST_LONG_TIMEOUT_MS = 600 * 1000
+
+const PULL_REQUEST_POLL_INTERVAL_MS = Settings.giteaSync?.pullRequestPollInterval
+const PULL_REQUEST_TIMEOUT_MS = Settings.giteaSync?. pullRequestTimeout
+
 
 const maxConcurrency = process.env.GITEA_API_MAX_CONCURRENCY || 5
 
@@ -36,7 +39,6 @@ function buildHeaders(token) {
   return {
     Accept: 'application/vnd.gitea+json',
     'Content-Type': 'application/json',
-    'X-Gitea-Api-Version': '2022-11-28',
     'User-Agent': 'Overleaf-CEP-Gitea-Sync',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   }
@@ -320,7 +322,6 @@ function createTree(token, repoFullName, entries, baseTree) {
       operation: existingPaths.has(entry.path) ? 'update' : 'create',
       path: entry.path,
       content: entry.content,
-      ...(existingPaths.has(entry.path) && entry.sha ? { sha: entry.sha } : {}),
     })
   }
 
@@ -332,9 +333,13 @@ function createTree(token, repoFullName, entries, baseTree) {
 
 function createCommit(token, repoFullName, { tree, message, branch }) {
   const payload = {
-    branch: branch || GITEA_DEFAULT_BRANCH,
+    branch: GITEA_DEFAULT_BRANCH,
     message,
     files: tree.entries,
+  }
+
+  if (branch && branch !== GITEA_DEFAULT_BRANCH) {
+    payload.new_branch = branch
   }
 
   return fetchGiteaJson(
@@ -350,14 +355,11 @@ function createCommit(token, repoFullName, { tree, message, branch }) {
 }
 
 function getCommitTree(token, repoFullName, commit) {
-  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/commits/${commit}`, {
-    headers: buildHeaders(token),
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  }, 'getCommitTree').then(r => r.tree.sha)
+  return listBlobsAtCommit(token, repoFullName, commit)
 }
 
 function listBlobsAtCommit(token, repoFullName, commit) {
-// can use commit sha here instead of tree sha
+  // can use commit sha here instead of tree sha
   return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/trees/${commit}?recursive=1`, {
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
@@ -407,28 +409,22 @@ function getBranchHead(token, repoFullName, branchName) {
 }
 
 function createBranch(token, repoFullName, branchName, sha) {
-  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/refs`, {
+  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/branches`, {
     method: 'POST',
     headers: buildHeaders(token),
     json: {
-      ref: `refs/heads/${branchName}`,
-      sha,
+      new_branch_name: branchName,
+      old_ref_name: sha,
     },
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
   }, 'createBranch')
 }
 
 function updateBranch(token, repoFullName, branchName, sha, force = false) {
-  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/git/refs/heads/${encodeURIComponent(branchName)}`, {
-    method: 'PATCH',
-    headers: buildHeaders(token),
-    json: { sha, force },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  }, 'updateBranch')
 }
 
 function deleteBranch(token, repoFullName, branchName) {
-  return fetchGiteaNothing(`${GITEA_API_BASE}/repos/${repoFullName}/git/refs/heads/${encodeURIComponent(branchName)}`, {
+  return fetchGiteaNothing(`${GITEA_API_BASE}/repos/${repoFullName}/branches/${encodeURIComponent(branchName)}`, {
     method: 'DELETE',
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
@@ -436,13 +432,64 @@ function deleteBranch(token, repoFullName, branchName) {
 }
 
 // merge / compare
+function mergePullRequest(token, repoFullName, pullNumber) {
+  return fetchGiteaNothing(`${GITEA_API_BASE}/repos/${repoFullName}/pulls/${pullNumber}/merge`, {
+      method: 'POST',
+      headers: buildHeaders(token),
+      json: {
+        do: "merge",
+        delete_branch_after_merge: true,
+      },
+      signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
+    },
+    'mergePullRequest'
+  ).then(() => true).catch(err => { throw err })
+}
+
+function createPullRequest(token, repoFullName, base, head) {
+  return fetchGiteaJson(
+    `${GITEA_API_BASE}/repos/${repoFullName}/pulls`,
+    {
+      method: 'POST',
+      headers: buildHeaders(token),
+      json: {
+        title: `Merge ${head} into ${base}`,
+        head,
+        base
+      },
+      signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
+    },
+    'createPullRequest'
+  )
+}
+
+async function waitForMergeToBeDone(token, repoFullName, prNumber) {
+  const startedAt = Date.now()
+
+  while (Date.now() - startedAt < PULL_REQUEST_TIMEOUT_MS) {
+    const pr = await fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/pulls/${prNumber}`, {
+      method: 'GET',
+      headers: buildHeaders(token),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    }, 'getPullRequest')
+
+    if (pr.merged) {
+      return pr.merge_commit_sha
+    }
+
+    await new Promise(resolve => setTimeout(resolve, PULL_REQUEST_POLL_INTERVAL_MS))
+    continue
+  }
+
+  throw new Error(`Timed out waiting for pull request ${prNumber} to be merged`)
+}
+
 function mergeBranch(token, repoFullName, base, head) {
-  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/merges`, {
-    method: 'POST',
-    headers: buildHeaders(token),
-    json: { base, head },
-    signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
-  }, 'mergeBranch').then(r => r.sha)
+  return createPullRequest(token, repoFullName, base, head)
+    .then(pr => {
+      mergePullRequest(token, repoFullName, pr.number)
+      return waitForMergeToBeDone(token, repoFullName, pr.number)
+    })
 }
 
 function compareCommits(token, repoFullName, from, to) {
