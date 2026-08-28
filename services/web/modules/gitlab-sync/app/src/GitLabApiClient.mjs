@@ -193,6 +193,19 @@ function getTokenRefreshTimestamp(token, safetyMarginInSec = 300) {
   return token.created_at + token.expires_in - safetyMarginInSec;
 }
 
+
+async function compareCommitsFull(token, repoFullName, from, to) {
+  const url = new URL(`${GITLAB_API_BASE}/projects/${projectPath(repoFullName)}/repository/compare`)
+  url.searchParams.set('from', from)
+  url.searchParams.set('to', to)
+
+  return await fetchGitLabJson(url.toString(), {
+    headers: buildHeaders(token),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+  }, 'compareCommitsFull')
+}
+
+
 // ---------------------- exports ------------------------------- //
 
 // OAuth
@@ -217,7 +230,7 @@ function exchangeCodeForToken(code) {
       redirect_uri: Settings.gitlabSync.callbackURL,
     },
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-  }, 'exchangeCodeForToken').then(r => [r.access_token, r.refresh_token, getTokenRefreshTimestamp(r)] )
+  }, 'exchangeCodeForToken').then(r => [r.access_token, r.refresh_token, getTokenRefreshTimestamp(r)])
 }
 
 function refreshToken(refreshToken) {
@@ -448,31 +461,40 @@ async function listBlobsAtCommit(token, repoFullName, commit) {
 }
 
 async function getBlobContent(token, repoFullName, sha) {
+  if (!sha) return null
+
   const url = `${GITLAB_API_BASE}/projects/${projectPath(repoFullName)}/repository/blobs/${sha}`
 
-  try {
-    const json = await fetchGitLabJson(url, {
-      headers: buildHeaders(token),
-      signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
-    }, 'getBlobContent')
-    return json.content
-  } catch (err) {
-    throw OError.tag(err, 'Failed to fetch blob content from GitLab', { repoFullName, sha })
-  }
+  return await fetchGitLabJson(url, {
+    headers: buildHeaders(token),
+    signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
+  }, 'getBlobContent').then(r => r.content || '')
 }
 
 async function listNewCommitsWithStatus(token, fullName, branchName, fromCommit) {
-  const url = new URL(`${GITLAB_API_BASE}/projects/${projectPath(fullName)}/repository/compare`)
-  url.searchParams.set('from', fromCommit)
-  url.searchParams.set('to', branchName)
-  url.searchParams.set('straight', 'true')
+  const forward = await compareCommitsFull(token, fullName, fromCommit, branchName);
+  const reverse = await compareCommitsFull(token, fullName, branchName, fromCommit);
+  const forwardHasCommits = forward.commits.length > 0;
+  const reverseHasCommits = reverse.commits.length > 0;
 
-  const data = await fetchGitLabJson(url.toString(), {
-    headers: buildHeaders(token),
-    signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
-  }, 'listNewCommitsWithStatus')
+  let diverged = false
 
-  const commits = (data.commits || []).map(c => ({
+  if (forward.compare_same_ref) {
+    // Identical
+  }
+  else if (forwardHasCommits && !reverseHasCommits) {
+    // Ahead
+  }
+  else if (!forwardHasCommits && reverseHasCommits) {
+    // Behind (here also considered a diverged state)
+    diverged = true
+  }
+  else if (forwardHasCommits && reverseHasCommits) {
+    // Diverged
+    diverged = true
+  }
+
+  const commits = (forward.commits || []).map(c => ({
     message: c.message || c.title || '',
     author: {
       name: c.author_name || '',
@@ -482,7 +504,7 @@ async function listNewCommitsWithStatus(token, fullName, branchName, fromCommit)
     sha: c.id,
   }))
 
-  return { commits, diverged: commits.length > 0 }
+  return { commits, diverged }
 }
 
 // branches
@@ -506,7 +528,7 @@ function createBranch(token, repoFullName, branchName, sha) {
 }
 
 function updateBranch(token, repoFullName, branchName, sha, force = false) {
-// Update functionality does not exist in GitLab API as it automatically updates the branch when a commit is made to it
+  // Update functionality does not exist in GitLab API as it automatically updates the branch when a commit is made to it
 }
 
 function deleteBranch(token, repoFullName, branchName) {
@@ -538,9 +560,9 @@ async function waitForMergeRequestToBeReady(token, repoFullName, mergeRequestIid
 
   while (Date.now() - startedAt < MERGE_REQUEST_TIMEOUT_MS) {
     const mergeRequest = await fetchGitLabJson(`${GITLAB_API_BASE}/projects/${projectPath(repoFullName)}/merge_requests/${mergeRequestIid}`, {
-        headers: buildHeaders(token),
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      }, 'getMergeRequest')
+      headers: buildHeaders(token),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    }, 'getMergeRequest')
 
     const status = mergeRequest.detailed_merge_status
 
@@ -586,8 +608,8 @@ function mergeBranch(token, repoFullName, base, head) {
     .then(async mergeRequest => {
       const ret = await waitForMergeRequestToBeReady(token, repoFullName, mergeRequest.iid)
       if (!ret.canMerge) {
-          throw new GitConflictError("Merge request cannot be merged due to conflicts, reason: " + ret.reason)
-       }
+        throw new GitConflictError("Merge request cannot be merged due to conflicts, reason: " + ret.reason)
+      }
 
       await mergeOpenMergeRequest(token, repoFullName, mergeRequest.iid)
       return getBranchHead(token, repoFullName, base)
@@ -612,6 +634,7 @@ function getRepoZipball(token, repoFullName, sha) {
     signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS),
   }, 'getRepoZipball')
 }
+
 
 export default {
   maxConcurrency,

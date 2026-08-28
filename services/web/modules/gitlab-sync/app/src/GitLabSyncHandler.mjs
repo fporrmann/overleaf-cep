@@ -18,15 +18,14 @@ import { InvalidTokenError, NotFoundError } from './GitSyncErrors.mjs'
 
 async function getGitConnState(userId) {
   try {
-    const tokens = await TokenManager.getUserToken(userId)
-    if (!tokens) return false;
-    const { token } = tokens
+    const token = await TokenManager.getUserToken(userId)
+    if (!token) return false;
 
     await api.getUser(token)
     return true
   } catch (err) {
     if (err instanceof InvalidTokenError) {
-      logger.debug( { err, userId }, 'token invalid, treating as not connected')
+      logger.debug({ err, userId }, 'token invalid, treating as not connected')
       return false
     }
     throw OError.tag(err, 'failed to validate token', { userId })
@@ -52,13 +51,13 @@ async function getProjectState(userId, projectId) {
   }
   let canPush
   try {
-    const tokens = await TokenManager.getUserToken(userId)
-    if (!tokens) throw new InvalidTokenError('no user token', { userId, status: 400 });
-    const { token } = tokens
+    const token = await TokenManager.getUserToken(userId)
+    if (!token) throw new InvalidTokenError('no user token', { userId, status: 400 });
+
     canPush = await api.getPushPermission(token, pss.repoFullName)
   } catch (err) {
     if ((err instanceof NotFoundError) ||
-        (err instanceof PermissionDeniedError)
+      (err instanceof PermissionDeniedError)
     ) canPush = false
     else throw err
   }
@@ -97,16 +96,14 @@ async function unlinkRepo(userId, projectId) {
 
 
 async function listUserRepos(userId) {
-  const tokens = await TokenManager.getUserToken(userId)
-  if (!tokens) throw new InvalidTokenError('no user token', { userId, status: 400 });
- const { token } = tokens
+  const token = await TokenManager.getUserToken(userId)
+  if (!token) throw new InvalidTokenError('no user token', { userId, status: 400 });
   return await api.listUserRepos(token)
 }
 
 async function getUserAndOrgs(userId) {
-  const tokens = await TokenManager.getUserToken(userId)
-  if (!tokens) throw new InvalidTokenError('no user token', { userId, status: 400 });
-  const { token } = tokens
+  const token = await TokenManager.getUserToken(userId)
+  if (!token) throw new InvalidTokenError('no user token', { userId, status: 400 });
   return await api.getUserAndOrgs(token)
 }
 
@@ -117,15 +114,14 @@ async function getMergeOverview(userId, projectId) {
 
   if (mergeStatus === 'conflict') return null
 
-  const tokens = await TokenManager.getUserToken(userId)
-  if (!tokens) throw new InvalidTokenError('no user token', { userId, status: 400 });
-  const { token } = tokens
+  const token = await TokenManager.getUserToken(userId)
+  if (!token) throw new InvalidTokenError('no user token', { userId, status: 400 });
   const currentVersion = await HistoryManager.latestVersion(projectId.toString())
   const isProjectUpdated = currentVersion !== lastSyncVersion
   try {
     const commitsAndStatus = await api.listNewCommitsWithStatus(token, repoFullName, defaultBranchName, lastSyncCommit)
-    if(commitsAndStatus.diverged) {
-      await SyncStateManager.updateProjectState(projectId, { mergeStatus: 'diverged' } )
+    if (commitsAndStatus.diverged) {
+      await SyncStateManager.updateProjectState(projectId, { mergeStatus: 'diverged' })
     }
     return { ...commitsAndStatus, isProjectUpdated }
   } catch (err) {
@@ -139,7 +135,7 @@ async function getMergeOverview(userId, projectId) {
         canPush = false
       }
       if (!canPush) throw err
-      await SyncStateManager.updateProjectState(projectId, { mergeStatus: 'diverged' } )
+      await SyncStateManager.updateProjectState(projectId, { mergeStatus: 'diverged' })
       return { commits: [], diverged: true, isProjectUpdated }
     } else {
       throw err
@@ -148,9 +144,8 @@ async function getMergeOverview(userId, projectId) {
 }
 
 async function importRepo(userId, projectName, repoFullName, defaultBranchName) {
-  const tokens = await TokenManager.getUserToken(userId)
-  if (!tokens) throw new InvalidTokenError('no user token', { userId, status: 400 });
-  const { token } = tokens
+  const token = await TokenManager.getUserToken(userId)
+  if (!token) throw new InvalidTokenError('no user token', { userId, status: 400 });
   const defaultBranchHead = await api.getBranchHead(token, repoFullName, defaultBranchName)
   const fsPath = Path.join(Settings.path.dumpFolder, `gitlab_import_${crypto.randomUUID()}`)
 
@@ -174,7 +169,7 @@ async function importRepo(userId, projectName, repoFullName, defaultBranchName) 
       { userId, projectName, repoFullName, defaultBranchName, fsPath }
     )
   } finally {
-    fs.promises.rm(fsPath, { force: true }).catch(() => {})
+    fs.promises.rm(fsPath, { force: true }).catch(() => { })
   }
 
   try {
@@ -187,7 +182,7 @@ async function importRepo(userId, projectName, repoFullName, defaultBranchName) 
       lastSyncVersion: projectVersion
     })
   } catch (err) {
-// don't throw up
+    // don't throw up
     logger.error(
       { err, userId, projectId: project_id.toString(), repoFullName },
       'Failed to create state of imported repo'
@@ -203,12 +198,11 @@ async function exportProject(userId, projectId, repoOptions) {
     throw new OError('Project is already linked to Git server', { projectId })
   }
 
-  const tokens = await TokenManager.getUserToken(userId)
-  if (!tokens) throw new InvalidTokenError('no user token', { userId, status: 400 });
-  const { token } = tokens
+  const token = await TokenManager.getUserToken(userId)
+  if (!token) throw new InvalidTokenError('no user token', { userId, status: 400 });
 
   const { path_with_namespace: repoFullName, default_branch: defaultBranchName } =
-  await api.createRepo(token, repoOptions)
+    await api.createRepo(token, repoOptions)
 
   await DocumentUpdaterHandler.promises.flushProjectToMongo(projectId)
 
