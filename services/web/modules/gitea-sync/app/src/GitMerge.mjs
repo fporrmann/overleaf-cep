@@ -691,6 +691,11 @@ async function exportChangesToGit({
   const deleteEntries = [...deletePaths].map(path => ({ path, sha: null, content: null }))
   const entries = [...deleteEntries, ...upsertEntries]
 
+  // Check if the branch exists, if not create it from the provided baseCommit
+  if (!await api.doesBranchExist(token, repoFullName, branch)) {
+    await api.createBranch(token, repoFullName, branch, baseCommit)
+  }
+
   const newCommit = await createCommitFromEntries({
     token,
     repoFullName,
@@ -706,7 +711,8 @@ async function exportChangesToGit({
 function generateBranchName() {
   const d = new Date()
   const pad = n => `${n}`.padStart(2, '0')
-  return `overleaf-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`
+  const hexSuffix = Math.floor(Math.random() * 0x10000).toString(16).padStart(4, '0') // Add a random hex suffix to avoid collisions in case of multiple merges in the same time frame
+  return `overleaf-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}-${hexSuffix}`
 }
 
 async function getGitBlobMap(token, repoFullName, commit) {

@@ -333,13 +333,9 @@ function createTree(token, repoFullName, entries, baseTree) {
 
 function createCommit(token, repoFullName, { tree, message, branch }) {
   const payload = {
-    branch: GITEA_DEFAULT_BRANCH,
+    branch: branch || GITEA_DEFAULT_BRANCH,
     message,
     files: tree.entries,
-  }
-
-  if (branch && branch !== GITEA_DEFAULT_BRANCH) {
-    payload.new_branch = branch
   }
 
   return fetchGiteaJson(
@@ -431,8 +427,39 @@ function deleteBranch(token, repoFullName, branchName) {
   }, 'deleteBranch')
 }
 
+function doesBranchExist(token, repoFullName, branchName) {
+  if (!branchName || branchName === GITEA_DEFAULT_BRANCH) {
+    // The default branch can be expected to always exist
+    return Promise.resolve(true)
+  }
+
+  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/branches/${encodeURIComponent(branchName)}`, {
+    method: 'GET',
+    headers: buildHeaders(token),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+  }, 'doesBranchExist').then(() => true).catch(err => {
+    if (err instanceof NotFoundError) {
+      return false
+    }
+    throw err
+  })
+}
+
 // merge / compare
-function mergePullRequest(token, repoFullName, pullNumber) {
+async function getPullRequest(token, repoFullName, pullNumber) {
+  return fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/pulls/${pullNumber}`, {
+    method: 'GET',
+    headers: buildHeaders(token),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+  }, 'getPullRequest')
+}
+
+async function mergePullRequest(token, repoFullName, pullNumber) {
+  const pr = await getPullRequest(token, repoFullName, pullNumber)
+  if (!pr.mergable) {
+    throw new GitConflictError(`Pull request ${pullNumber} is not mergable`)
+  }
+
   return fetchGiteaNothing(`${GITEA_API_BASE}/repos/${repoFullName}/pulls/${pullNumber}/merge`, {
       method: 'POST',
       headers: buildHeaders(token),
@@ -446,7 +473,7 @@ function mergePullRequest(token, repoFullName, pullNumber) {
   ).then(() => true).catch(err => { throw err })
 }
 
-function createPullRequest(token, repoFullName, base, head) {
+async function createPullRequest(token, repoFullName, base, head) {
   return fetchGiteaJson(
     `${GITEA_API_BASE}/repos/${repoFullName}/pulls`,
     {
@@ -467,14 +494,14 @@ async function waitForMergeToBeDone(token, repoFullName, prNumber) {
   const startedAt = Date.now()
 
   while (Date.now() - startedAt < PULL_REQUEST_TIMEOUT_MS) {
-    const pr = await fetchGiteaJson(`${GITEA_API_BASE}/repos/${repoFullName}/pulls/${prNumber}`, {
-      method: 'GET',
-      headers: buildHeaders(token),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    }, 'getPullRequest')
+    const pr = await getPullRequest(token, repoFullName, prNumber)
 
     if (pr.merged) {
       return pr.merge_commit_sha
+    }
+
+    if (!pr.mergable) {
+      throw new GitConflictError(`Pull request ${prNumber} is not mergable`)
     }
 
     await new Promise(resolve => setTimeout(resolve, PULL_REQUEST_POLL_INTERVAL_MS))
@@ -486,9 +513,9 @@ async function waitForMergeToBeDone(token, repoFullName, prNumber) {
 
 function mergeBranch(token, repoFullName, base, head) {
   return createPullRequest(token, repoFullName, base, head)
-    .then(pr => {
-      mergePullRequest(token, repoFullName, pr.number)
-      return waitForMergeToBeDone(token, repoFullName, pr.number)
+    .then(async pr => {
+      await mergePullRequest(token, repoFullName, pr.number)
+      return await waitForMergeToBeDone(token, repoFullName, pr.number)
     })
 }
 
@@ -529,6 +556,7 @@ export default {
   createBranch,
   updateBranch,
   deleteBranch,
+  doesBranchExist,
   mergeBranch,
   compareCommits,
   getRepoZipball,
