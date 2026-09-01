@@ -30,7 +30,7 @@ const REQUEST_TIMEOUT_MS = 60 * 1000
 const REQUEST_LONG_TIMEOUT_MS = 600 * 1000
 
 const PULL_REQUEST_POLL_INTERVAL_MS = Settings.giteaSync?.pullRequestPollInterval
-const PULL_REQUEST_TIMEOUT_MS = Settings.giteaSync?. pullRequestTimeout
+const PULL_REQUEST_TIMEOUT_MS = Settings.giteaSync?.pullRequestTimeout
 
 
 const maxConcurrency = process.env.GITEA_API_MAX_CONCURRENCY || 5
@@ -455,9 +455,9 @@ async function getPullRequest(token, repoFullName, pullNumber) {
 }
 
 async function mergePullRequest(token, repoFullName, pullNumber) {
-  const pr = await getPullRequest(token, repoFullName, pullNumber)
-  if (!pr.mergable) {
-    throw new GitConflictError(`Pull request ${pullNumber} is not mergable`)
+  const mergeable = await checkPullRequestMergeable(token, repoFullName, pullNumber, PULL_REQUEST_TIMEOUT_MS)
+  if (!mergeable) {
+    throw new GitConflictError(`Pull request ${pullNumber} is not mergeable`)
   }
 
   return fetchGiteaNothing(`${GITEA_API_BASE}/repos/${repoFullName}/pulls/${pullNumber}/merge`, {
@@ -490,6 +490,25 @@ async function createPullRequest(token, repoFullName, base, head) {
   )
 }
 
+// Default to -1 which means no timeout
+async function checkPullRequestMergeable(token, repoFullName, pullNumber, timeoutMS = -1) {
+  const startedAt = Date.now()
+
+  while(true) {
+    const pr = await getPullRequest(token, repoFullName, pullNumber)
+
+    if (pr.mergeable) {
+      return true
+    }
+
+    if (timeoutMS == -1 || Date.now() - startedAt > timeoutMS) {
+      return false
+    }
+
+    await new Promise(resolve => setTimeout(resolve, PULL_REQUEST_POLL_INTERVAL_MS))
+  }
+}
+
 async function waitForMergeToBeDone(token, repoFullName, prNumber) {
   const startedAt = Date.now()
 
@@ -500,15 +519,15 @@ async function waitForMergeToBeDone(token, repoFullName, prNumber) {
       return pr.merge_commit_sha
     }
 
-    if (!pr.mergable) {
-      throw new GitConflictError(`Pull request ${prNumber} is not mergable`)
-    }
-
     await new Promise(resolve => setTimeout(resolve, PULL_REQUEST_POLL_INTERVAL_MS))
     continue
   }
 
-  throw new Error(`Timed out waiting for pull request ${prNumber} to be merged`)
+  const pr = await getPullRequest(token, repoFullName, prNumber)
+  logger.info({pr}, 'waitForMergeToBeDone')
+  if (!pr.mergeable) {
+    throw new GitConflictError(`Pull request ${prNumber} is not mergeable`)
+  }
 }
 
 function mergeBranch(token, repoFullName, base, head) {
