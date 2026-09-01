@@ -432,6 +432,11 @@ async function resolveDetachedSyncState(
   })
 
   const tempBranchName = generateBranchName()
+  // Check if the branch exists, if not create it from the provided baseCommit
+  if (!await api.doesBranchExist(token, repoFullName, tempBranchName)) {
+    await api.createBranch(token, repoFullName, tempBranchName, baseCommit)
+  }
+
   // temp branch: --- H --- B --- OL
   const olChangesCommit = await createCommitFromEntries({
     token,

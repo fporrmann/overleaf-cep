@@ -147,6 +147,16 @@ function getTokenRefreshTimestamp(token, safetyMarginInSec = 300) {
     return (Date.now() / 1000) + token.expires_in - safetyMarginInSec;
 }
 
+
+async function compareCommitsFull(token, repoFullName, from, to) {
+  const url = `${GITEA_API_BASE}/repos/${repoFullName}/compare/${from}...${encodeURIComponent(to)}`
+  return await fetchGiteaJson(url, {
+    headers: buildHeaders(token),
+    signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
+  }, 'listNewCommitsWithStatus')
+}
+
+
 // ---------------------- exports ------------------------------- //
 
 // OAuth
@@ -369,14 +379,42 @@ function listBlobsAtCommit(token, repoFullName, commit) {
   )
 }
 
-async function listNewCommitsWithStatus(token, fullName, branchName, fromCommit) {
-  const url = `${GITEA_API_BASE}/repos/${fullName}/compare/${fromCommit}...${encodeURIComponent(branchName)}`
-  const data = await fetchGiteaJson(url, {
+async function getBlobContent(token, repoFullName, sha) {
+  if (!sha) return null
+
+  const url = `${GITEA_API_BASE}/repos/${repoFullName}/git/blobs/${sha}`
+
+  return await fetchGiteaJson(url, {
     headers: buildHeaders(token),
     signal: AbortSignal.timeout(REQUEST_LONG_TIMEOUT_MS)
-  }, 'listNewCommitsWithStatus')
+  }, 'getBlobContent').then(r => r.content || '')
+}
 
-  const commits = (data.commits || []).map(c => ({
+async function listNewCommitsWithStatus(token, fullName, branchName, fromCommit) {
+  const forward = await compareCommitsFull(token, fullName, fromCommit, branchName);
+  const reverse = await compareCommitsFull(token, fullName, branchName, fromCommit);
+
+  const forwardHasCommits = (forward.commits || []).length > 0
+  const reverseHasCommits = (reverse.commits || []).length > 0
+
+  let diverged = false
+
+  if (forwardHasCommits && !reverseHasCommits) {
+    // Ahead
+  }
+  else if (!forwardHasCommits && reverseHasCommits) {
+    // Behind
+    diverged = true
+  }
+  else if (forwardHasCommits && reverseHasCommits) {
+    // Diverged
+    diverged = true
+  }
+  else {
+    // Identical
+  }
+
+  const commits = (forward.commits || []).map(c => ({
     message: c.commit?.message || '',
     author: {
       name: c.commit?.author?.name || '',
@@ -385,7 +423,7 @@ async function listNewCommitsWithStatus(token, fullName, branchName, fromCommit)
     },
     sha: c.sha,
   }))
-  const diverged = (data.status === 'diverged' || data.status === 'behind')
+
   return { commits, diverged }
 }
 
@@ -570,6 +608,7 @@ export default {
   createCommit,
   getCommitTree,
   listBlobsAtCommit,
+  getBlobContent,
   listNewCommitsWithStatus,
   getBranchHead,
   createBranch,
