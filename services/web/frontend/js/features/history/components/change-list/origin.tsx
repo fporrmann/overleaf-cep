@@ -8,8 +8,8 @@ function Origin({ origin }: Pick<LoadedUpdate['meta'], 'origin'>) {
   if (origin?.kind === 'dropbox') result = t('history_entry_origin_dropbox')
   if (origin?.kind === 'upload') result = t('history_entry_origin_upload')
   if (origin?.kind === 'git-bridge') result = t('history_entry_origin_git')
-  if (origin?.kind === 'github') result = t('history_entry_origin_github')
-  if (origin?.kind === 'gitlab') result = t('history_entry_origin_gitlab')
+  if (origin?.kind === 'github') result = t('history_entry_origin_github', { gitProvider: 'GitHub' })
+  if (origin?.kind === 'gitlab') result = t('history_entry_origin_github', { gitProvider: 'GitLab' })
 
   if (result) {
     return <span className="history-version-origin">({result})</span>

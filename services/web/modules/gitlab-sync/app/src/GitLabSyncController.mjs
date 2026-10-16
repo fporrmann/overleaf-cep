@@ -145,7 +145,7 @@ async function oauth2Callback(req, res) {
 
   // Save success message in session to display on redirect
   req.session.projectSyncSuccessMessage =
-    req.i18n.translate('gitlab_successfully_linked_description')
+    req.i18n.translate('github_successfully_linked_description', { gitProvider: 'GitLab' })
   res.redirect('/user/settings?oauth-complete=gitlab#project-sync')
 }
 
@@ -183,9 +183,9 @@ async function exportProject(req, res) {
     const errStatus  = info?.status || 500
     logger.error(OError.getFullStack(err))
     logger.error({ info, projectId }, 'Error exporting project')
-    let key = 'gitlab_validation_check'
-    if (err instanceof AlreadyExistsError) key = 'gitlab_validation_name_exists'
-    else if (errStatus === 401 || errStatus === 403) key = 'gitlab_validation_check_auth'
+    let key = 'github_validation_check'
+    if (err instanceof AlreadyExistsError) key = 'github_validation_name_exists'
+    else if (errStatus === 401 || errStatus === 403) key = 'github_validation_check_auth'
     return res.status(errStatus).json({ key, message: err.message })
   }
   res.sendStatus(200)

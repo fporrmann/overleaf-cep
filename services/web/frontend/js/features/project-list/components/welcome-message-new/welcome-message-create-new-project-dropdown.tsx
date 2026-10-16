@@ -180,7 +180,7 @@ function WelcomeMessageCreateNewProjectDropdown({
               }
               tabIndex={-1}
             >
-              {t('import_from_github')}
+              {t('import_from_github', { gitProvider: 'GitHub' })}
             </OLDropdownItem>
           </li>
         )}
@@ -197,7 +197,7 @@ function WelcomeMessageCreateNewProjectDropdown({
               }
               tabIndex={-1}
             >
-              {t('import_from_gitlab')}
+              {t('import_from_github', { gitProvider: 'GitLab' })}
             </DropdownItem>
           </li>
         )}

@@ -85,8 +85,8 @@ const GitSyncExportModal = ({
   return (
     <>
       <OLModalBody>
-        <h4>{t('export_project_to_github')}</h4>
-        <p>{t('project_not_linked_to_github')}</p>
+        <h4>{t('export_project_to_github', { gitProvider: 'GitHub' })}</h4>
+        <p>{t('project_not_linked_to_github', { gitProvider: 'GitHub' })}</p>
 
         {error && (
           <Notification
@@ -219,7 +219,7 @@ const GitSyncExportModal = ({
           disabled={!repoName.trim() || isLoading}
           isLoading={isLoading}
         >
-          {t('create_project_in_github')}
+          {t('create_project_in_github', { gitProvider: 'GitHub' })}
         </OLButton>
       </OLModalFooter>
     </>

@@ -209,7 +209,7 @@ export function ChangeToGroupModal() {
                   <li>
                     <strong>{t('all_premium_features')}</strong>
                   </li>
-                  <li>{t('sync_dropbox_github')}</li>
+                  <li>{t('sync_dropbox_github', { gitProvider: 'GitHub' })}</li>
                   <li>{t('full_doc_history')}</li>
                   <li>{t('track_changes')}</li>
                   <li>

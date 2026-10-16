@@ -16,8 +16,8 @@ const GitHubSyncCard = () => {
   return (
     <>
       <IntegrationCard
-        title={t('github')}
-        description={t('sync_with_a_github_repository')}
+        title={t('github', { gitProvider: 'GitHub' })}
+        description={t('sync_with_a_github_repository', { gitProvider: 'GitHub' })}
         icon={<GithubLogo size={32} />}
         showPaywallBadge={false}
         onClick={() => setShowModal(true)}

@@ -85,8 +85,8 @@ const GitSyncExportModal = ({
   return (
     <>
       <OLModalBody>
-        <h4>{t('export_project_to_gitlab')}</h4>
-        <p>{t('project_not_linked_to_gitlab')}</p>
+        <h4>{t('export_project_to_github', { gitProvider: 'GitLab' })}</h4>
+        <p>{t('project_not_linked_to_github', { gitProvider: 'GitLab' })}</p>
 
         {error && (
           <Notification
@@ -180,7 +180,7 @@ const GitSyncExportModal = ({
                     checked={visibility === 'public'}
                     onChange={() => setVisibility('public')}
                     label={t('public', { defaultValue: 'Public' })}
-                    description={t('gitlab_public_description')}
+                    description={t('github_public_description')}
                   />
                 </OLCol>
               </OLRow>
@@ -196,7 +196,7 @@ const GitSyncExportModal = ({
                     checked={visibility === 'private'}
                     onChange={() => setVisibility('private')}
                     label={t('private', { defaultValue: 'Private' })}
-                    description={t('gitlab_private_description')}
+                    description={t('github_private_description')}
                   />
                 </OLCol>
               </OLRow>
@@ -219,7 +219,7 @@ const GitSyncExportModal = ({
           disabled={!repoName.trim() || isLoading}
           isLoading={isLoading}
         >
-          {t('create_project_in_gitlab')}
+          {t('create_project_in_github', { gitProvider: 'GitLab' })}
         </OLButton>
       </OLModalFooter>
     </>

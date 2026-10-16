@@ -12,7 +12,7 @@ const GitSyncNeedAuthModal = ({ handleHide }: { handleHide: () => void }) => {
   return (
     <>
       <OLModalBody>
-        <p>{t('link_to_github_description', { appName })}</p>
+        <p>{t('link_to_github_description', { appName, gitProvider: 'GitHub' })}</p>
       </OLModalBody>
       <OLModalFooter>
         <OLButton
@@ -33,7 +33,7 @@ const GitSyncNeedAuthModal = ({ handleHide }: { handleHide: () => void }) => {
             )
           }}
         >
-          {t('link_to_github')}
+          {t('link_to_github', { gitProvider: 'GitHub' })}
         </OLButton>
       </OLModalFooter>
     </>

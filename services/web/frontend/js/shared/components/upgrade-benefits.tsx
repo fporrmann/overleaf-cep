@@ -35,7 +35,7 @@ function UpgradeBenefits({ className }: { className?: string }) {
       <li>
         <Check />
         &nbsp;
-        {t('sync_to_github')}
+        {t('sync_to_github', { gitProvider: 'GitHub' })}
       </li>
       <li>
         <Check />

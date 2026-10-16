@@ -142,7 +142,7 @@ async function oauth2Callback(req, res) {
 
   // Save success message in session to display on redirect
   req.session.projectSyncSuccessMessage =
-    req.i18n.translate('github_successfully_linked_description')
+    req.i18n.translate('github_successfully_linked_description', { gitProvider: 'GitHub' })
   res.redirect('/user/settings?oauth-complete=github#project-sync')
 }
 

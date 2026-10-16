@@ -37,7 +37,7 @@ const GitSyncUnlinkUnavailableModal = ({
       <OLModalBody>
         <Notification
           type="error"
-          content={t('gitlab_sync_repository_not_found_description')}
+          content={t('github_sync_repository_not_found_description', { gitProvider: 'GitLab' })}
         />
 
         {error && (
@@ -46,8 +46,8 @@ const GitSyncUnlinkUnavailableModal = ({
             content={
               error.info?.statusCode === 403 ? (
                 <Trans
-                  i18nKey="ask_proj_owner_to_unlink_from_current_gitlab"
-                  values={{ projectOwnerEmail: error?.data?.ownerEmail ?? '?' }}
+                  i18nKey="ask_proj_owner_to_unlink_from_current_github"
+                  values={{ gitProvider: 'GitLab', projectOwnerEmail: error?.data?.ownerEmail ?? '?' }}
                   components={[
                     error?.data?.ownerEmail ? <a href={`mailto:${error.data.ownerEmail}`} /> : <></>
                   ]}
@@ -67,7 +67,7 @@ const GitSyncUnlinkUnavailableModal = ({
             onClick={handleUnlink}
             disabled={isLoading}
           >
-            {t('unlink_gitlab_repository')}
+            {t('unlink_github_repository', { gitProvider: 'GitLab' })}
           </OLButton>
 
           <OLButton

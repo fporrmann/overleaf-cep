@@ -130,7 +130,7 @@ const {
   return (
     <OLModal show={show} onHide={handleHide} backdrop="static" themed="true">
       <OLModalHeader closeButton>
-        <OLModalTitle>{t('sync_with_github')}</OLModalTitle>
+        <OLModalTitle>{t('sync_with_github', { gitProvider: 'GitHub' })}</OLModalTitle>
       </OLModalHeader>
 
       {modalStatus === 'loading' && (

@@ -24,7 +24,7 @@ const GitSyncNeedPermissionModal = ({ projectSyncState, handleHide }: GitSyncNee
           type="warning"
           content={(
             <Trans
-              i18nKey="ask_proj_owner_to_add_you_as_gitlab_collaborator"
+              i18nKey="ask_proj_owner_to_add_you_as_github_collaborator"
               values={{
                 repoFullName: projectSyncState.repoFullName ?? '?',
                 projectOwnerEmail: projectSyncState.ownerEmail ?? '?',

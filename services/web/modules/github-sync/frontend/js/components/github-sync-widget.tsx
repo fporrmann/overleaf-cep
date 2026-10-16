@@ -85,13 +85,13 @@ export const GitHubSyncWidget = function GitHubSyncWidget() {
           </div>
 
           <p className="small">
-            {t('github_sync_description', { appName })}
+            {t('github_sync_description', { appName, gitProvider: 'GitHub' })}
           </p>
 
           {isErrorConnCheck && (
             <Notification
               type="error"
-              content={t('github_sync_error')}
+              content={t('github_sync_error', { gitProvider: 'GitHub' })}
             />
           )}
 
@@ -147,7 +147,7 @@ export const GitHubSyncWidget = function GitHubSyncWidget() {
         <OLModalBody>
           <p>
             {t('unlink_github_warning', {
-              provider: 'GitHub',
+              gitProvider: 'GitHub',
             })}
           </p>
         </OLModalBody>

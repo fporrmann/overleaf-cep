@@ -83,14 +83,14 @@ function ImportFromGitLabModalContent({ handleHide }: { handleHide: () => void }
   return (
     <>
       <OLModalHeader onClose={handleHide}>
-        <OLModalTitle>{t('import_from_gitlab')}</OLModalTitle>
+        <OLModalTitle>{t('import_from_github', { gitProvider: 'GitLab' })}</OLModalTitle>
       </OLModalHeader>
 
       <OLModalBody>
         {isLoading && (
           <span>
             <OLSpinner size="sm" className="me-2"/>
-            {t('loading_gitlab_repositories')}
+            {t('loading_github_repositories', { gitProvider: 'GitLab' })}
           </span>
         )}
 
@@ -113,13 +113,13 @@ function ImportFromGitLabModalContent({ handleHide }: { handleHide: () => void }
         {showLinkToGitLab && (
           <div className="text-center">
             <p>
-              {t('link_to_gitlab_description', { appName })}
+              {t('link_to_github_description', { appName, gitProvider: 'GitLab' })}
             </p>
             <OLButton
               variant="secondary"
               href="/user/gitlab-sync/oauth2"
             >
-              {t('link_to_gitlab')}
+              {t('link_to_github', { gitProvider: 'GitLab' })}
             </OLButton>
           </div>
         )}
@@ -133,7 +133,7 @@ function ImportFromGitLabModalContent({ handleHide }: { handleHide: () => void }
             ) : (
               <>
                 <p className="text-center">
-                  {t('select_gitlab_repository', { appName })}
+                  {t('select_github_repository', { appName, gitProvider: 'GitLab' })}
                 </p>
                 <div className="table-container table-container-bordered">
                   <table className="table table-striped table-hover">

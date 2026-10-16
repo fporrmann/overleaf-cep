@@ -80,14 +80,14 @@ function ImportFromGitHubModalContent({ handleHide }: { handleHide: () => void }
   return (
     <>
       <OLModalHeader onClose={handleHide}>
-        <OLModalTitle>{t('import_from_github')}</OLModalTitle>
+        <OLModalTitle>{t('import_from_github', { gitProvider: 'GitHub' })}</OLModalTitle>
       </OLModalHeader>
 
       <OLModalBody>
         {isLoading && (
           <span>
             <OLSpinner size="sm" className="me-2"/>
-            {t('loading_github_repositories')}
+            {t('loading_github_repositories', { gitProvider: 'GitHub' })}
           </span>
         )}
 
@@ -110,13 +110,13 @@ function ImportFromGitHubModalContent({ handleHide }: { handleHide: () => void }
         {showLinkToGitHub && (
           <div className="text-center">
             <p>
-              {t('link_to_github_description', { appName })}
+              {t('link_to_github_description', { appName, gitProvider: 'GitHub' })}
             </p>
             <OLButton
               variant="secondary"
               href="/user/github-sync/oauth2"
             >
-              {t('link_to_github')}
+              {t('link_to_github', { gitProvider: 'GitHub' })}
             </OLButton>
           </div>
         )}
@@ -130,7 +130,7 @@ function ImportFromGitHubModalContent({ handleHide }: { handleHide: () => void }
             ) : (
               <>
                 <p className="text-center">
-                  {t('select_github_repository', { appName })}
+                  {t('select_github_repository', { appName, gitProvider: 'GitHub' })}
                 </p>
                 <div className="table-container table-container-bordered">
                   <table className="table table-striped table-hover">

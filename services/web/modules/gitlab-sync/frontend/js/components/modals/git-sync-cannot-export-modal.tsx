@@ -21,7 +21,7 @@ const GitSyncCannotExportModal = ({ projectSyncState, handleHide }: GitSyncCanno
           type="warning"
           content={(
             <Trans
-              i18nKey="ask_proj_owner_to_export_to_gitlab"
+              i18nKey="ask_proj_owner_to_export_to_github"
               values={{
                 projectOwnerEmail: projectSyncState.ownerEmail ?? '?',
               }}

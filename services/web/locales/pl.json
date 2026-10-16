@@ -91,7 +91,7 @@
   "general": "Ogólne",
   "generic_something_went_wrong": "Przepraszamy, coś poszło nie tak",
   "get_more_compile_time": "Uzyskaj więcej czasu kompilacji",
-  "github_sync_error": "Przepraszamy, ale wystąpił błąd komunikacji z naszym kontem GitHub. Proszę spróbuj ponownie za parę chwil.",
+  "github_sync_error": "Przepraszamy, ale wystąpił błąd komunikacji z naszym kontem __gitProvider__. Proszę spróbuj ponownie za parę chwil.",
   "help": "Pomoc",
   "homepage_access_from_anywhere_on_any_device": "Dostęp z każdego miejsca i urządzenia",
   "homepage_access_to_integrations": "Dostęp do integracji",

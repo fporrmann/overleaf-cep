@@ -53,7 +53,7 @@ const GitSyncUnlinkModal = ({
         {!error ? (
           <Notification
             type="warning"
-            content={t('unlink_the_project_from_the_current_github_repo')}
+            content={t('unlink_the_project_from_the_current_github_repo', { gitProvider: 'GitHub' })}
           />
         ) : (
           <Notification
@@ -62,7 +62,7 @@ const GitSyncUnlinkModal = ({
               error.info?.statusCode === 403 ? (
                 <Trans
                   i18nKey="ask_proj_owner_to_unlink_from_current_github"
-                  values={{ projectOwnerEmail: error?.data?.ownerEmail ?? '?' }}
+                  values={{ gitProvider: 'GitHub', projectOwnerEmail: error?.data?.ownerEmail ?? '?' }}
                   components={[
                     error?.data?.ownerEmail ? <a href={`mailto:${error.data.ownerEmail}`} /> : <></>
                   ]}

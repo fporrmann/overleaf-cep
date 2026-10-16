@@ -6,7 +6,7 @@ export default function ImportFromGitLabMenu({ onClick }: { onClick: (e: React.M
   const { t } = useTranslation()
   return (
     <OLDropdownItem onClick={onClick}>
-      {t('import_from_gitlab')}
+      {t('import_from_github', { gitProvider: 'GitLab' })}
     </OLDropdownItem>
   )
 }

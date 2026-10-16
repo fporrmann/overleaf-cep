@@ -16,8 +16,8 @@ const GitLabSyncCard = () => {
   return (
     <>
       <IntegrationCard
-        title={t('gitlab')}
-        description={t('sync_with_a_gitlab_repository')}
+        title={t('github', { gitProvider: 'GitLab' })}
+        description={t('sync_with_a_github_repository', { gitProvider: 'GitLab' })}
         icon={<GitLabLogo size={32} />}
         showPaywallBadge={false}
         onClick={() => setShowModal(true)}

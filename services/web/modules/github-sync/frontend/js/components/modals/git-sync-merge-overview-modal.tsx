@@ -112,12 +112,12 @@ const GitSyncMergeOverviewModal = ({
             {data.diverged && (
               <Notification
                 type="warning"
-                content={t('github_repository_diverged')}
+                content={t('github_repository_diverged', { gitProvider: 'GitHub' })}
               />
             )}
 
             <h3 className="github-sync-commits-heading">
-              {t('recent_commits_in_github')}
+              {t('recent_commits_in_github', { gitProvider: 'GitHub' })}
 
               <OLIconButton
                 icon="refresh"
@@ -130,7 +130,7 @@ const GitSyncMergeOverviewModal = ({
 
             {data.commits?.length === 0 && (
               <div>
-                <p className="small">{t('no_new_commits_in_github')}</p>
+                <p className="small">{t('no_new_commits_in_github', { gitProvider: 'GitHub' })}</p>
               </div>
             )}
 
@@ -169,7 +169,7 @@ const GitSyncMergeOverviewModal = ({
               <>
                 <hr />
                 <OLForm>
-                  <p>{t('sync_project_to_github_explanation', { appName })}</p>
+                  <p>{t('sync_project_to_github_explanation', { appName, gitProvider: 'GitHub' })}</p>
                   <OLRow>
                     <OLCol xs={12}>
                       <OLFormGroup>

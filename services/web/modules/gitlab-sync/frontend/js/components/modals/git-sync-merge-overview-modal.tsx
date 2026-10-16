@@ -116,12 +116,12 @@ const GitSyncMergeOverviewModal = ({
             {data.diverged && (
               <Notification
                 type="warning"
-                content={t('gitlab_repository_diverged')}
+                content={t('github_repository_diverged', { gitProvider: 'GitLab' })}
               />
             )}
 
             <h3 className="gitlab-sync-commits-heading">
-              {t('recent_commits_in_gitlab')}
+              {t('recent_commits_in_github', { gitProvider: 'GitLab' })}
 
               <OLIconButton
                 icon="refresh"
@@ -134,7 +134,7 @@ const GitSyncMergeOverviewModal = ({
 
             {data.commits?.length === 0 && (
               <div>
-                <p className="small">{t('no_new_commits_in_gitlab')}</p>
+                <p className="small">{t('no_new_commits_in_github', { gitProvider: 'GitLab' })}</p>
               </div>
             )}
 
@@ -173,7 +173,7 @@ const GitSyncMergeOverviewModal = ({
               <>
                 <hr />
                 <OLForm>
-                  <p>{t('sync_project_to_gitlab_explanation', { appName })}</p>
+                  <p>{t('sync_project_to_github_explanation', { appName, gitProvider: 'GitLab' })}</p>
                   <OLRow>
                     <OLCol xs={12}>
                       <OLFormGroup>
@@ -181,7 +181,7 @@ const GitSyncMergeOverviewModal = ({
                           as="textarea"
                           rows={1}
                           value={commitMessage}
-                          placeholder={t('gitlab_commit_message_placeholder', { appName })}
+                          placeholder={t('github_commit_message_placeholder', { appName })}
                           onChange={(e) => setCommitMessage(e.target.value)}
                         />
                       </OLFormGroup>

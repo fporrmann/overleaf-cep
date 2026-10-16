@@ -103,7 +103,7 @@ const GitSyncMergeModal = ({
             className="spinner-border spinner-border-sm"
           ></div>
 
-          {t('importing_and_merging_changes_in_github')}
+          {t('importing_and_merging_changes_in_github', { gitProvider: 'GitHub' })}
         </div>
       </OLModalBody>
 

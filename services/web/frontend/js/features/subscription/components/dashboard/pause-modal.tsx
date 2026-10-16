@@ -104,7 +104,7 @@ export default function PauseSubscriptionModal() {
           )}
           <li>{t('more_compile_time')}</li>
           <li>{t('features_like_track_changes')}</li>
-          <li>{t('integrations_like_github')}</li>
+          <li>{t('integrations_like_github', { gitProvider: 'GitHub' })}</li>
         </ul>
         <OLFormGroup>
           <Select

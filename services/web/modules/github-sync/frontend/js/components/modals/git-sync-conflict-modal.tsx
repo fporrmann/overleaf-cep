@@ -24,7 +24,7 @@ const GitSyncConflictModal = ({ projectSyncState, handleHide, setModalStatus }: 
       <OLModalBody>
         <Notification
           type="warning"
-          content={t('github_merge_failed_error', { appName })}
+          content={t('github_merge_failed_error', { appName, gitProvider: 'GitHub' })}
         />
         <p className="mt-2">
           <Trans
