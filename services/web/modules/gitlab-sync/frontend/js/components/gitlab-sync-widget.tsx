@@ -14,6 +14,7 @@ import {
 } from '@/shared/components/ol/ol-modal'
 import Notification from '@/shared/components/notification'
 import GitLabLogo from '@/shared/svgs/gitlab-logo'
+import { GIT_PROVIDER } from '../constants'
 
 export const GitLabSyncWidget = function GitLabSyncWidget() {
   const { t } = useTranslation()
@@ -85,13 +86,13 @@ export const GitLabSyncWidget = function GitLabSyncWidget() {
           </div>
 
           <p className="small">
-            {t('github_sync_description', { appName, gitProvider: 'GitLab' })}
+            {t('github_sync_description', { appName, gitProvider: GIT_PROVIDER })}
           </p>
 
           {isErrorConnCheck && (
             <Notification
               type="error"
-              content={t('github_sync_error', { gitProvider: 'GitLab' })}
+              content={t('github_sync_error', { gitProvider: GIT_PROVIDER })}
             />
           )}
 
@@ -147,7 +148,7 @@ export const GitLabSyncWidget = function GitLabSyncWidget() {
         <OLModalBody>
           <p>
             {t('unlink_github_warning', {
-              gitProvider: 'GitLab',
+              gitProvider: GIT_PROVIDER,
             })}
           </p>
         </OLModalBody>

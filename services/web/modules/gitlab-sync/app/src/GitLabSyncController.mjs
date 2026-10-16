@@ -10,6 +10,8 @@ import api from './GitLabApiClient.mjs'
 import { doGitMerge } from './GitMerge.mjs'
 import { InvalidTokenError, GitNotLinkedError, AlreadyExistsError } from './GitSyncErrors.mjs'
 
+const GIT_PROVIDER = 'GitLab'
+
 async function getConnectionStatus(req, res) {
   const userId = SessionManager.getLoggedInUserId(req.session)
 
@@ -145,7 +147,7 @@ async function oauth2Callback(req, res) {
 
   // Save success message in session to display on redirect
   req.session.projectSyncSuccessMessage =
-    req.i18n.translate('github_successfully_linked_description', { gitProvider: 'GitLab' })
+    req.i18n.translate('github_successfully_linked_description', { gitProvider: GIT_PROVIDER })
   res.redirect('/user/settings?oauth-complete=gitlab#project-sync')
 }
 

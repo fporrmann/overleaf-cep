@@ -22,6 +22,7 @@ import GitSyncUnlinkUnavailableModal from './git-sync-unlink-unavailable-modal'
 import GitSyncCannotExportModal from './git-sync-cannot-export-modal'
 
 import { GitSyncModalStatus, ProjectSyncState } from '../../types/git-sync-types'
+import { GIT_PROVIDER } from '../../constants'
 
 type GitSyncModalProps = {
   show: boolean
@@ -130,7 +131,7 @@ const {
   return (
     <OLModal show={show} onHide={handleHide} backdrop="static">
       <OLModalHeader closeButton>
-        <OLModalTitle>{t('sync_with_github', { gitProvider: 'GitLab' })}</OLModalTitle>
+        <OLModalTitle>{t('sync_with_github', { gitProvider: GIT_PROVIDER })}</OLModalTitle>
       </OLModalHeader>
 
       {modalStatus === 'loading' && (

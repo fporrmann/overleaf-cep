@@ -13,6 +13,7 @@ import Notification from '@/shared/components/notification'
 import { GitSyncModalStatus, ProjectSyncState } from '../../types/git-sync-types'
 
 import { useReferencesContext } from '@/features/ide-react/context/references-context'
+import { GIT_PROVIDER } from '../../constants'
 
 type GitSyncMergeModalProps = {
   handleHide: () => void
@@ -103,7 +104,7 @@ const GitSyncMergeModal = ({
             className="spinner-border spinner-border-sm"
           ></div>
 
-          {t('importing_and_merging_changes_in_github', { gitProvider: 'GitHub' })}
+          {t('importing_and_merging_changes_in_github', { gitProvider: GIT_PROVIDER })}
         </div>
       </OLModalBody>
 

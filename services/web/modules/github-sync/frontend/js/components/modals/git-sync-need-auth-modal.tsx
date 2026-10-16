@@ -5,6 +5,7 @@ import {
   OLModalFooter,
 } from '@/shared/components/ol/ol-modal'
 import OLButton from '@/shared/components/ol/ol-button'
+import { GIT_PROVIDER } from '../../constants'
 
 const GitSyncNeedAuthModal = ({ handleHide }: { handleHide: () => void }) => {
   const { t } = useTranslation()
@@ -12,7 +13,7 @@ const GitSyncNeedAuthModal = ({ handleHide }: { handleHide: () => void }) => {
   return (
     <>
       <OLModalBody>
-        <p>{t('link_to_github_description', { appName, gitProvider: 'GitHub' })}</p>
+        <p>{t('link_to_github_description', { appName, gitProvider: GIT_PROVIDER })}</p>
       </OLModalBody>
       <OLModalFooter>
         <OLButton
@@ -33,7 +34,7 @@ const GitSyncNeedAuthModal = ({ handleHide }: { handleHide: () => void }) => {
             )
           }}
         >
-          {t('link_to_github', { gitProvider: 'GitHub' })}
+          {t('link_to_github', { gitProvider: GIT_PROVIDER })}
         </OLButton>
       </OLModalFooter>
     </>

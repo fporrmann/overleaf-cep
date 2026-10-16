@@ -17,6 +17,7 @@ import {
 import OLButton from '@/shared/components/ol/ol-button'
 import OLSpinner from '@/shared/components/ol/ol-spinner'
 import Notification from '@/shared/components/notification'
+import { GIT_PROVIDER } from '../constants'
 
 type GitSyncRepo = {
   name: string
@@ -83,14 +84,14 @@ function ImportFromGitLabModalContent({ handleHide }: { handleHide: () => void }
   return (
     <>
       <OLModalHeader onClose={handleHide}>
-        <OLModalTitle>{t('import_from_github', { gitProvider: 'GitLab' })}</OLModalTitle>
+        <OLModalTitle>{t('import_from_github', { gitProvider: GIT_PROVIDER })}</OLModalTitle>
       </OLModalHeader>
 
       <OLModalBody>
         {isLoading && (
           <span>
             <OLSpinner size="sm" className="me-2"/>
-            {t('loading_github_repositories', { gitProvider: 'GitLab' })}
+            {t('loading_github_repositories', { gitProvider: GIT_PROVIDER })}
           </span>
         )}
 
@@ -113,13 +114,13 @@ function ImportFromGitLabModalContent({ handleHide }: { handleHide: () => void }
         {showLinkToGitLab && (
           <div className="text-center">
             <p>
-              {t('link_to_github_description', { appName, gitProvider: 'GitLab' })}
+              {t('link_to_github_description', { appName, gitProvider: GIT_PROVIDER })}
             </p>
             <OLButton
               variant="secondary"
               href="/user/gitlab-sync/oauth2"
             >
-              {t('link_to_github', { gitProvider: 'GitLab' })}
+              {t('link_to_github', { gitProvider: GIT_PROVIDER })}
             </OLButton>
           </div>
         )}
@@ -133,7 +134,7 @@ function ImportFromGitLabModalContent({ handleHide }: { handleHide: () => void }
             ) : (
               <>
                 <p className="text-center">
-                  {t('select_github_repository', { appName, gitProvider: 'GitLab' })}
+                  {t('select_github_repository', { appName, gitProvider: GIT_PROVIDER })}
                 </p>
                 <div className="table-container table-container-bordered">
                   <table className="table table-striped table-hover">

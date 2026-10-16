@@ -5,6 +5,7 @@ import GitLabLogo from '@/shared/svgs/gitlab-logo'
 import IntegrationCard from '@/features/integrations-panel/integration-card'
 import GitSyncModal from './modals/git-sync-modal'
 import { GitSyncModalStatus } from '../types/git-sync-types'
+import { GIT_PROVIDER } from '../constants'
 
 const GitLabSyncCard = () => {
   const { t } = useTranslation()
@@ -16,8 +17,8 @@ const GitLabSyncCard = () => {
   return (
     <>
       <IntegrationCard
-        title={t('github', { gitProvider: 'GitLab' })}
-        description={t('sync_with_a_github_repository', { gitProvider: 'GitLab' })}
+        title={t('github', { gitProvider: GIT_PROVIDER })}
+        description={t('sync_with_a_github_repository', { gitProvider: GIT_PROVIDER })}
         icon={<GitLabLogo size={32} />}
         showPaywallBadge={false}
         onClick={() => setShowModal(true)}

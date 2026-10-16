@@ -6,6 +6,7 @@ import OLButton from '@/shared/components/ol/ol-button'
 import Notification from '@/shared/components/notification'
 import { debugConsole } from '@/utils/debugging'
 import { ProjectSyncState, GitSyncModalStatus } from '../../types/git-sync-types'
+import { GIT_PROVIDER } from '../../constants'
 
 type GitSyncUnlinkModalProps = {
   handleHide: () => void
@@ -53,7 +54,7 @@ const GitSyncUnlinkModal = ({
         {!error ? (
           <Notification
             type="warning"
-            content={t('unlink_the_project_from_the_current_github_repo', { gitProvider: 'GitHub' })}
+            content={t('unlink_the_project_from_the_current_github_repo', { gitProvider: GIT_PROVIDER })}
           />
         ) : (
           <Notification
@@ -62,7 +63,7 @@ const GitSyncUnlinkModal = ({
               error.info?.statusCode === 403 ? (
                 <Trans
                   i18nKey="ask_proj_owner_to_unlink_from_current_github"
-                  values={{ gitProvider: 'GitHub', projectOwnerEmail: error?.data?.ownerEmail ?? '?' }}
+                  values={{ gitProvider: GIT_PROVIDER, projectOwnerEmail: error?.data?.ownerEmail ?? '?' }}
                   components={[
                     error?.data?.ownerEmail ? <a href={`mailto:${error.data.ownerEmail}`} /> : <></>
                   ]}

@@ -21,6 +21,7 @@ import OLFormSelect from '@/shared/components/ol/ol-form-select'
 import OLRow from '@/shared/components/ol/ol-row'
 import OLCol from '@/shared/components/ol/ol-col'
 import { GitSyncModalStatus } from '../../types/git-sync-types'
+import { GIT_PROVIDER } from '../../constants'
 
 type OrgsResponse = {
   user: string
@@ -85,8 +86,8 @@ const GitSyncExportModal = ({
   return (
     <>
       <OLModalBody>
-        <h4>{t('export_project_to_github', { gitProvider: 'GitLab' })}</h4>
-        <p>{t('project_not_linked_to_github', { gitProvider: 'GitLab' })}</p>
+        <h4>{t('export_project_to_github', { gitProvider: GIT_PROVIDER })}</h4>
+        <p>{t('project_not_linked_to_github', { gitProvider: GIT_PROVIDER })}</p>
 
         {error && (
           <Notification
@@ -219,7 +220,7 @@ const GitSyncExportModal = ({
           disabled={!repoName.trim() || isLoading}
           isLoading={isLoading}
         >
-          {t('create_project_in_github', { gitProvider: 'GitLab' })}
+          {t('create_project_in_github', { gitProvider: GIT_PROVIDER })}
         </OLButton>
       </OLModalFooter>
     </>

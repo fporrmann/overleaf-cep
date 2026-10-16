@@ -8,6 +8,7 @@ import OLButton from '@/shared/components/ol/ol-button'
 import Notification from '@/shared/components/notification'
 
 import { ProjectSyncState, GitSyncModalStatus } from '../../types/git-sync-types'
+import { GIT_PROVIDER } from '../../constants'
 
 type GitSyncConflictModalProps = {
   projectSyncState: ProjectSyncState
@@ -24,7 +25,7 @@ const GitSyncConflictModal = ({ projectSyncState, handleHide, setModalStatus }: 
       <OLModalBody>
         <Notification
           type="warning"
-          content={t('github_merge_failed_error', { appName, gitProvider: 'GitLab' })}
+          content={t('github_merge_failed_error', { appName, gitProvider: GIT_PROVIDER })}
         />
         <p className="mt-2">
           <Trans

@@ -13,6 +13,7 @@ import OLIconButton from '@/shared/components/ol/ol-icon-button'
 import Notification from '@/shared/components/notification'
 import { debugConsole } from '@/utils/debugging'
 import { ProjectSyncState, GitSyncModalStatus } from '../../types/git-sync-types'
+import { GIT_PROVIDER } from '../../constants'
 
 type GitSyncMergeOverviewModalProps = {
   handleHide: () => void
@@ -112,12 +113,12 @@ const GitSyncMergeOverviewModal = ({
             {data.diverged && (
               <Notification
                 type="warning"
-                content={t('github_repository_diverged', { gitProvider: 'GitHub' })}
+                content={t('github_repository_diverged', { gitProvider: GIT_PROVIDER })}
               />
             )}
 
             <h3 className="github-sync-commits-heading">
-              {t('recent_commits_in_github', { gitProvider: 'GitHub' })}
+              {t('recent_commits_in_github', { gitProvider: GIT_PROVIDER })}
 
               <OLIconButton
                 icon="refresh"
@@ -130,7 +131,7 @@ const GitSyncMergeOverviewModal = ({
 
             {data.commits?.length === 0 && (
               <div>
-                <p className="small">{t('no_new_commits_in_github', { gitProvider: 'GitHub' })}</p>
+                <p className="small">{t('no_new_commits_in_github', { gitProvider: GIT_PROVIDER })}</p>
               </div>
             )}
 
@@ -169,7 +170,7 @@ const GitSyncMergeOverviewModal = ({
               <>
                 <hr />
                 <OLForm>
-                  <p>{t('sync_project_to_github_explanation', { appName, gitProvider: 'GitHub' })}</p>
+                  <p>{t('sync_project_to_github_explanation', { appName, gitProvider: GIT_PROVIDER })}</p>
                   <OLRow>
                     <OLCol xs={12}>
                       <OLFormGroup>

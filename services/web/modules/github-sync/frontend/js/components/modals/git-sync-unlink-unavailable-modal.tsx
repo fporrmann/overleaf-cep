@@ -6,6 +6,7 @@ import OLButton from '@/shared/components/ol/ol-button'
 import Notification from '@/shared/components/notification'
 import { debugConsole } from '@/utils/debugging'
 import { GitSyncModalStatus } from '../../types/git-sync-types'
+import { GIT_PROVIDER } from '../../constants'
 
 type GitSyncUnlinkUnavailableModalProps = {
   handleHide: () => void
@@ -37,7 +38,7 @@ const GitSyncUnlinkUnavailableModal = ({
       <OLModalBody>
         <Notification
           type="error"
-          content={t('github_sync_repository_not_found_description', { gitProvider: 'GitHub' })}
+          content={t('github_sync_repository_not_found_description', { gitProvider: GIT_PROVIDER })}
         />
 
         {error && (
@@ -47,7 +48,7 @@ const GitSyncUnlinkUnavailableModal = ({
               error.info?.statusCode === 403 ? (
                 <Trans
                   i18nKey="ask_proj_owner_to_unlink_from_current_github"
-                  values={{ gitProvider: 'GitHub', projectOwnerEmail: error?.data?.ownerEmail ?? '?' }}
+                  values={{ gitProvider: GIT_PROVIDER, projectOwnerEmail: error?.data?.ownerEmail ?? '?' }}
                   components={[
                     error?.data?.ownerEmail ? <a href={`mailto:${error.data.ownerEmail}`} /> : <></>
                   ]}
@@ -67,7 +68,7 @@ const GitSyncUnlinkUnavailableModal = ({
             onClick={handleUnlink}
             disabled={isLoading}
           >
-            {t('unlink_github_repository', { gitProvider: 'GitHub' })}
+            {t('unlink_github_repository', { gitProvider: GIT_PROVIDER })}
           </OLButton>
 
           <OLButton

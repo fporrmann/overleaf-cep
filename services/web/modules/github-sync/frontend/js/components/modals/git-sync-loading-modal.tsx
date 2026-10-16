@@ -6,6 +6,7 @@ import {
 import OLButton from '@/shared/components/ol/ol-button'
 import Notification from '@/shared/components/notification'
 import { GitSyncModalStatus } from '../../types/git-sync-types'
+import { GIT_PROVIDER } from '../../constants'
 
 type GitSyncLoadingModalProps = {
   handleHide: () => void
@@ -20,7 +21,7 @@ const GitSyncLoadingModal = ({ handleHide, setModalStatus, errorMessage }: GitSy
       <OLModalBody>
         <div role="status" className="loading align-items-start">
           <div aria-hidden="true" data-testid="ol-spinner" className="spinner-border spinner-border-sm"></div>
-          {t('checking_project_github_status', { gitProvider: 'GitHub' })}
+          {t('checking_project_github_status', { gitProvider: GIT_PROVIDER })}
         </div>
       </OLModalBody>
 
